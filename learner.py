@@ -15,7 +15,7 @@ from critic import update_q, update_v
 
 
 def target_update(critic: Model, target_critic: Model, tau: float) -> Model:
-    new_target_params = jax.tree_multimap(
+    new_target_params = jax.tree_map(
         lambda p, tp: p * tau + tp * (1 - tau), critic.params,
         target_critic.params)
 
@@ -60,7 +60,9 @@ class Learner(object):
                  temperature: float = 0.1,
                  dropout_rate: Optional[float] = None,
                  max_steps: Optional[int] = None,
-                 opt_decay_schedule: str = "cosine"):
+                 opt_decay_schedule: str = "cosine",
+                 load_model: Optional[str] = None,
+                 load_critics: Optional[bool] = False):
         """
         An implementation of the version of Soft-Actor-Critic described in https://arxiv.org/abs/1801.01290
         """
@@ -111,6 +113,14 @@ class Learner(object):
         self.value = value
         self.target_critic = target_critic
         self.rng = rng
+
+        if load_model:
+            self.actor.load(load_model+"/actor")
+            exit()
+            if load_critics:
+                self.critic.load(load_model+"/critic")
+                self.value.load(load_model + "/value")
+                self.target_critic.load(load_model + "/target_critic")
 
     def sample_actions(self,
                        observations: np.ndarray,

@@ -1,5 +1,7 @@
 import os
 from typing import Tuple
+import re
+import glob
 
 import gym
 import numpy as np
@@ -15,8 +17,10 @@ from learner import Learner
 
 FLAGS = flags.FLAGS
 
+
 flags.DEFINE_string('env_name', 'halfcheetah-expert-v2', 'Environment name.')
-flags.DEFINE_string('save_dir', './tmp/', 'Tensorboard logging dir.')
+flags.DEFINE_string('save_dir', 'logs/', 'Tensorboard logging dir.')
+flags.DEFINE_string('load_model', '', 'Saved model path.')
 flags.DEFINE_integer('seed', 42, 'Random seed.')
 flags.DEFINE_integer('eval_episodes', 10,
                      'Number of episodes used for evaluation.')
@@ -25,12 +29,14 @@ flags.DEFINE_integer('eval_interval', 5000, 'Eval interval.')
 flags.DEFINE_integer('batch_size', 256, 'Mini batch size.')
 flags.DEFINE_integer('max_steps', int(1e6), 'Number of training steps.')
 flags.DEFINE_boolean('tqdm', True, 'Use tqdm progress bar.')
+flags.DEFINE_boolean('load_critics', False, 'Warm-start critics and value function.')
+
+
 config_flags.DEFINE_config_file(
     'config',
     'default.py',
     'File path to the training hyperparameter configuration.',
     lock_config=False)
-
 
 def normalize(dataset):
 
@@ -75,12 +81,33 @@ def make_env_and_dataset(env_name: str,
 
     return env, dataset
 
+def make_save_dir():
+    if os.name == "nt":
+        FLAGS.save_dir = FLAGS.save_dir+"\\"+FLAGS.env_name
+    else:
+        FLAGS.save_dir = FLAGS.save_dir + "/" + FLAGS.env_name
+    existing = glob.glob(os.path.dirname(FLAGS.save_dir)+"/*")
+    if len(existing) > 0:
+        nums = [int(re.search("(.*)_([0-9]+)$", name).group(2)) for name in existing
+                if re.search("(.*)_([0-9])+", name).group(1) == FLAGS.save_dir]
+        try:
+            if len(nums) > 0:
+                FLAGS.save_dir = f"{FLAGS.save_dir}_{max(nums)+1}"
+            else:
+                FLAGS.save_dir = f"{FLAGS.save_dir}_0"
+        except ValueError:
+            print("If using Windows, use backslash '\' in your save_dir instead of forward slash.")
+    else:
+        FLAGS.save_dir = FLAGS.save_dir + f"_0"
+
+    os.makedirs(FLAGS.save_dir, exist_ok=True)
+    os.makedirs(FLAGS.save_dir + "/model/", exist_ok=True)
 
 def main(_):
+    make_save_dir()
     summary_writer = SummaryWriter(os.path.join(FLAGS.save_dir, 'tb',
                                                 str(FLAGS.seed)),
                                    write_to_disk=True)
-    os.makedirs(FLAGS.save_dir, exist_ok=True)
 
     env, dataset = make_env_and_dataset(FLAGS.env_name, FLAGS.seed)
 
@@ -89,6 +116,8 @@ def main(_):
                     env.observation_space.sample()[np.newaxis],
                     env.action_space.sample()[np.newaxis],
                     max_steps=FLAGS.max_steps,
+                    load_model=FLAGS.load_model,
+                    load_critics=FLAGS.load_critics,
                     **kwargs)
 
     eval_returns = []
@@ -106,6 +135,12 @@ def main(_):
                 else:
                     summary_writer.add_histogram(f'training/{k}', v, i)
             summary_writer.flush()
+
+            agent.actor.save(f"{FLAGS.save_dir}/model/actor")
+            print(agent.actor.params['MLP_0']['Dense_0']['bias'][:20])
+            agent.critic.save(f"{FLAGS.save_dir}/model/critic")
+            agent.target_critic.save(f"{FLAGS.save_dir}/model/target_critic")
+            agent.value.save(f"{FLAGS.save_dir}/model/value")
 
         if i % FLAGS.eval_interval == 0:
             eval_stats = evaluate(agent, env, FLAGS.eval_episodes)

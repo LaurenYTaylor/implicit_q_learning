@@ -21,5 +21,7 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     for k, v in stats.items():
         stats[k] = np.mean(v)
+        if k == "return":
+            print(stats[k])
 
     return stats
