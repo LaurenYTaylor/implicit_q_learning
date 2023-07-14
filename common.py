@@ -99,5 +99,4 @@ class Model:
     def load(self, load_path: str) -> 'Model':
         with open(load_path, 'rb') as f:
             params = flax.serialization.from_bytes(self.params, f.read())
-        print(params['MLP_0']['Dense_0']['bias'][:20])
         return self.replace(params=params)

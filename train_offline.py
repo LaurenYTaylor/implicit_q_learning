@@ -82,29 +82,38 @@ def make_env_and_dataset(env_name: str,
     return env, dataset
 
 def make_save_dir():
-    if os.name == "nt":
-        FLAGS.save_dir = FLAGS.save_dir+"\\"+FLAGS.env_name
-    else:
-        FLAGS.save_dir = FLAGS.save_dir + "/" + FLAGS.env_name
-    existing = glob.glob(os.path.dirname(FLAGS.save_dir)+"/*")
-    if len(existing) > 0:
-        nums = [int(re.search("(.*)_([0-9]+)$", name).group(2)) for name in existing
-                if re.search("(.*)_([0-9])+", name).group(1) == FLAGS.save_dir]
-        try:
-            if len(nums) > 0:
-                FLAGS.save_dir = f"{FLAGS.save_dir}_{max(nums)+1}"
-            else:
-                FLAGS.save_dir = f"{FLAGS.save_dir}_0"
-        except ValueError:
-            print("If using Windows, use backslash '\' in your save_dir instead of forward slash.")
-    else:
-        FLAGS.save_dir = FLAGS.save_dir + f"_0"
+    if not FLAGS.load_model:
+        if os.name == "nt":
+            FLAGS.save_dir = FLAGS.save_dir+"\\"+FLAGS.env_name
+        else:
+            FLAGS.save_dir = FLAGS.save_dir + "/" + FLAGS.env_name
+        existing = glob.glob(os.path.dirname(FLAGS.save_dir)+"/*")
+        if len(existing) > 0:
+            nums = [int(re.search("(.*)_([0-9]+)$", name).group(2)) for name in existing
+                    if re.search("(.*)_([0-9])+", name).group(1) == FLAGS.save_dir]
+            try:
+                if len(nums) > 0:
+                    FLAGS.save_dir = f"{FLAGS.save_dir}_{max(nums)+1}"
+                else:
+                    FLAGS.save_dir = f"{FLAGS.save_dir}_0"
+            except ValueError:
+                print("If using Windows, use backslash '\' in your save_dir instead of forward slash.")
+        else:
+            FLAGS.save_dir = FLAGS.save_dir + f"_0"
 
-    os.makedirs(FLAGS.save_dir, exist_ok=True)
-    os.makedirs(FLAGS.save_dir + "/model/", exist_ok=True)
+        os.makedirs(FLAGS.save_dir, exist_ok=True)
+        os.makedirs(FLAGS.save_dir + "/model/", exist_ok=True)
+    else:
+        FLAGS.save_dir = os.path.dirname(FLAGS.load_model) + "/continued_training/"
+        os.makedirs(FLAGS.save_dir, exist_ok=True)
+        os.makedirs(FLAGS.save_dir + "/model/", exist_ok=True)
+
+    return
 
 def main(_):
+
     make_save_dir()
+
     summary_writer = SummaryWriter(os.path.join(FLAGS.save_dir, 'tb',
                                                 str(FLAGS.seed)),
                                    write_to_disk=True)
@@ -137,7 +146,6 @@ def main(_):
             summary_writer.flush()
 
             agent.actor.save(f"{FLAGS.save_dir}/model/actor")
-            print(agent.actor.params['MLP_0']['Dense_0']['bias'][:20])
             agent.critic.save(f"{FLAGS.save_dir}/model/critic")
             agent.target_critic.save(f"{FLAGS.save_dir}/model/target_critic")
             agent.value.save(f"{FLAGS.save_dir}/model/value")

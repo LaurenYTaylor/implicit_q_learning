@@ -21,7 +21,55 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     for k, v in stats.items():
         stats[k] = np.mean(v)
-        if k == "return":
-            print(stats[k])
+    return stats
 
+def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
+             num_episodes: int, pretrained_agent: nn.Module,
+            horizon: int) -> Dict[str, float]:
+    stats = {'return': [], 'length': []}
+
+    for _ in range(num_episodes):
+        time_step = 0
+        observation, done = env.reset(), False
+
+        while not done:
+            agent = learning_agent
+            if time_step <= horizon:
+                agent = pretrained_agent
+
+            action = agent.sample_actions(observation, temperature=0.0)
+            observation, _, done, info = env.step(action)
+            time_step += 1
+
+        for k in stats.keys():
+            stats[k].append(info['episode'][k])
+
+    for k, v in stats.items():
+        stats[k] = np.mean(v)
+    return stats
+
+def evaluate_jsrl_goalstate(learning_agent: nn.Module, env: gym.Env,
+             num_episodes: int, pretrained_agent: nn.Module,
+            horizon: int, max_dist: float) -> Dict[str, float]:
+    stats = {'return': [], 'length': []}
+
+    for _ in range(num_episodes):
+        time_step = 0
+        observation, done = env.reset(), False
+
+        while not done:
+            agent = learning_agent
+            dist = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))/max_dist
+            if dist >= horizon:
+                agent = pretrained_agent
+
+            action = agent.sample_actions(observation, temperature=0.0)
+            observation, _, done, info = env.step(action)
+            time_step += 1
+
+        for k in stats.keys():
+            stats[k].append(info['episode'][k])
+
+    for k, v in stats.items():
+        stats[k] = np.mean(v)
     return stats
