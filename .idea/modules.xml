@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../D4RL-master/.idea/D4RL-master.iml" filepath="$PROJECT_DIR$/../D4RL-master/.idea/D4RL-master.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/implicit_q_learning.iml" filepath="$PROJECT_DIR$/.idea/implicit_q_learning.iml" />
     </modules>
   </component>

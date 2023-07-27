@@ -67,6 +67,14 @@ class Dataset(object):
                      masks=self.masks[indx],
                      next_observations=self.next_observations[indx])
 
+    def sample_fifo(self, batch_size: int) -> Batch:
+        indx = list(range(self.insert_index-batch_size, self.insert_index))
+        return Batch(observations=self.observations[indx],
+                     actions=self.actions[indx],
+                     rewards=self.rewards[indx],
+                     masks=self.masks[indx],
+                     next_observations=self.next_observations[indx])
+
 
 class D4RLDataset(Dataset):
     def __init__(self,

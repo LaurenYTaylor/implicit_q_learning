@@ -1,12 +1,13 @@
 import os
 from typing import Tuple
+import sys
 
 import gym
 import numpy as np
 import tqdm
 from absl import app, flags
 from ml_collections import config_flags
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import glob
 import re
 import time
@@ -90,6 +91,35 @@ def make_env_and_dataset(env_name: str,
 
     return env, dataset
 
+def make_save_dir_remote(load_model, env_name):
+    save_dir = "logs"
+    if not load_model:
+        if os.name == "nt":
+            save_dir = save_dir + "\\" + env_name
+        else:
+            save_dir = save_dir + "/" + env_name
+        existing = glob.glob(os.path.dirname(save_dir) + "/*")
+        if len(existing) > 0:
+            nums = [int(re.search("(.*)_([0-9]+)", name).group(2)) for name in existing
+                    if re.search("(.*)_([0-9])+", name).group(1) == save_dir]
+            try:
+                if len(nums) > 0:
+                    save_dir = f"{save_dir}_{max(nums) + 1}"
+                else:
+                    save_dir = f"{save_dir}_0"
+            except ValueError:
+                print("If using Windows, use backslash '\' in your save_dir instead of forward slash.")
+        else:
+            save_dir = save_dir + f"_0"
+
+        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(save_dir + "/model/", exist_ok=True)
+    else:
+        save_dir = os.path.dirname(load_model) + "/continued_training/"
+        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(save_dir + "/model/", exist_ok=True)
+
+    return save_dir
 def make_save_dir():
     if not FLAGS.load_model:
         if os.name == "nt":
@@ -98,7 +128,7 @@ def make_save_dir():
             FLAGS.save_dir = FLAGS.save_dir + "/" + FLAGS.env_name
         existing = glob.glob(os.path.dirname(FLAGS.save_dir) + "/*")
         if len(existing) > 0:
-            nums = [int(re.search("(.*)_([0-9]+)$", name).group(2)) for name in existing
+            nums = [int(re.search("(.*)_([0-9]+)", name).group(2)) for name in existing
                     if re.search("(.*)_([0-9])+", name).group(1) == FLAGS.save_dir]
             try:
                 if len(nums) > 0:
@@ -117,91 +147,112 @@ def make_save_dir():
         os.makedirs(FLAGS.save_dir, exist_ok=True)
         os.makedirs(FLAGS.save_dir + "/model/", exist_ok=True)
 
-    return
+    return FLAGS.save_dir
 
-def main(_):
-    make_save_dir()
-    for data_size in [100, 1000, 10000, None]:
-        FLAGS.init_dataset_size = data_size
-        for seed in range(20):
-            FLAGS.seed = seed
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            summary_writer = SummaryWriter(os.path.join(FLAGS.save_dir, 'tb',
-                                                        timestr+f"_s{FLAGS.seed}_d{FLAGS.init_dataset_size}"),
-                                           write_to_disk=True)
+def main(seed, data_size, save_dir=None):
+    FLAGS([sys.argv[0]])
+    FLAGS.env_name = "antmaze-umaze-v0"
+    FLAGS.eval_episodes = 25
+    FLAGS.eval_interval = 10000
+    FLAGS.num_pretraining_steps = 1000000
+    FLAGS.max_steps = 1000000
+    FLAGS.init_dataset_size = data_size
+    FLAGS.seed = seed
 
-            env, dataset = make_env_and_dataset(FLAGS.env_name, FLAGS.seed)
+    np.random.seed(seed)
 
-            action_dim = env.action_space.shape[0]
-            replay_buffer = ReplayBuffer(env.observation_space, action_dim,
-                                         FLAGS.replay_buffer_size or FLAGS.max_steps)
-            replay_buffer.initialize_with_dataset(dataset, FLAGS.init_dataset_size)
+    if save_dir is None:
+        FLAGS.save_dir = "logs"
+        make_save_dir()
+    else:
+        FLAGS.save_dir = save_dir
 
-            kwargs = dict(FLAGS.config)
-            agent = Learner(FLAGS.seed,
-                            env.observation_space.sample()[np.newaxis],
-                            env.action_space.sample()[np.newaxis], **kwargs)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    config_str = f"{timestr}_s{FLAGS.seed}_d{FLAGS.init_dataset_size}"
 
-            eval_returns = []
-            observation, done = env.reset(), False
+    summary_writer = SummaryWriter(os.path.join(FLAGS.save_dir, 'tb',
+                                    timestr+f"_s{FLAGS.seed}_d{FLAGS.init_dataset_size}"),
+                                    flush_secs=180)
 
-            # Use negative indices for pretraining steps.
-            for i in tqdm.tqdm(range(1 - FLAGS.num_pretraining_steps,
-                                     FLAGS.max_steps + 1),
-                               smoothing=0.1,
-                               disable=not FLAGS.tqdm):
-                if i >= 1:
-                    action = agent.sample_actions(observation, )
-                    action = np.clip(action, -1, 1)
-                    next_observation, reward, done, info = env.step(action)
+    env, dataset = make_env_and_dataset(FLAGS.env_name, FLAGS.seed)
 
-                    if not done or 'TimeLimit.truncated' in info:
-                        mask = 1.0
-                    else:
-                        mask = 0.0
+    action_dim = env.action_space.shape[0]
+    replay_buffer = ReplayBuffer(env.observation_space, action_dim,
+                                 FLAGS.replay_buffer_size or FLAGS.max_steps)
+    replay_buffer.initialize_with_dataset(dataset, FLAGS.init_dataset_size)
 
-                    replay_buffer.insert(observation, action, reward, mask,
-                                         float(done), next_observation)
-                    observation = next_observation
+    kwargs = dict(FLAGS.config)
+    agent = Learner(FLAGS.seed,
+                    env.observation_space.sample()[np.newaxis],
+                    env.action_space.sample()[np.newaxis], **kwargs)
 
-                    if done:
-                        observation, done = env.reset(), False
-                        for k, v in info['episode'].items():
-                            summary_writer.add_scalar(f'training/{k}', v,
-                                                      info['total']['timesteps'])
+    eval_returns = []
+    observation, done = env.reset(), False
+
+    # Use negative indices for pretraining steps.
+    for i in tqdm.tqdm(range(1 - FLAGS.num_pretraining_steps,
+                             FLAGS.max_steps + 1),
+                       smoothing=0.1,
+                       disable=not FLAGS.tqdm):
+        if i >= 1:
+            action = agent.sample_actions(observation, )
+            action = np.clip(action, -1, 1)
+            next_observation, reward, done, info = env.step(action)
+
+            if not done or 'TimeLimit.truncated' in info:
+                mask = 1.0
+            else:
+                mask = 0.0
+
+            replay_buffer.insert(observation, action, reward, mask,
+                                 float(done), next_observation)
+            observation = next_observation
+
+            if done:
+                observation, done = env.reset(), False
+                for k, v in info['episode'].items():
+                    summary_writer.add_scalar(f'training/{k}', v,
+                                              info['total']['timesteps'])
+                summary_writer.flush()
+        else:
+            info = {}
+            info['total'] = {'timesteps': i}
+
+        batch = replay_buffer.sample(FLAGS.batch_size)
+        if 'antmaze' in FLAGS.env_name:
+            batch = Batch(observations=batch.observations,
+                          actions=batch.actions,
+                          rewards=batch.rewards - 1,
+                          masks=batch.masks,
+                          next_observations=batch.next_observations)
+        update_info = agent.update(batch)
+
+
+        if i % FLAGS.log_interval == 0:
+            for k, v in update_info.items():
+                if v.ndim == 0:
+                    summary_writer.add_scalar(f'training/{k}', np.array(v), i)
                 else:
-                    info = {}
-                    info['total'] = {'timesteps': i}
+                    summary_writer.add_histogram(f'training/{k}', np.array(v), i)
+            summary_writer.flush()
 
-                batch = replay_buffer.sample(FLAGS.batch_size)
-                if 'antmaze' in FLAGS.env_name:
-                    batch = Batch(observations=batch.observations,
-                                  actions=batch.actions,
-                                  rewards=batch.rewards - 1,
-                                  masks=batch.masks,
-                                  next_observations=batch.next_observations)
-                update_info = agent.update(batch)
+        if i % FLAGS.eval_interval == 0:
+            eval_stats = evaluate(agent, env, FLAGS.eval_episodes)
 
-                if i % FLAGS.log_interval == 0:
-                    for k, v in update_info.items():
-                        if v.ndim == 0:
-                            summary_writer.add_scalar(f'training/{k}', v, i)
-                        else:
-                            summary_writer.add_histogram(f'training/{k}', v, i)
-                    summary_writer.flush()
+            for k, v in eval_stats.items():
+                summary_writer.add_scalar(f'evaluation/average_{k}s', v, i)
+            summary_writer.flush()
 
-                if i % FLAGS.eval_interval == 0:
-                    eval_stats = evaluate(agent, env, FLAGS.eval_episodes)
-
-                    for k, v in eval_stats.items():
-                        summary_writer.add_scalar(f'evaluation/average_{k}s', v, i)
-                    summary_writer.flush()
-
-                    eval_returns.append((i, eval_stats['return']))
-                    np.savetxt(os.path.join(FLAGS.save_dir, timestr+f"_s{FLAGS.seed}_d{FLAGS.init_dataset_size}.txt"),
-                               eval_returns,
-                               fmt=['%d', '%.1f'])
+            eval_returns.append((i, eval_stats['return']))
+            np.savetxt(os.path.join(FLAGS.save_dir, timestr+f"_s{FLAGS.seed}_d{FLAGS.init_dataset_size}.txt"),
+                       eval_returns,
+                       fmt=['%d', '%.1f'])
+    summary_writer.close()
+    agent.actor.save(f"{FLAGS.save_dir}/model/{config_str}/actor")
+    agent.critic.save(f"{FLAGS.save_dir}/model/{config_str}/critic")
+    agent.target_critic.save(f"{FLAGS.save_dir}/model/{config_str}/target_critic")
+    agent.value.save(f"{FLAGS.save_dir}/model/{config_str}/value")
 
 
-if __name__ == '__main__':
-    app.run(main)
+#if __name__ == '__main__':
+#    app.run(main)

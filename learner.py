@@ -119,8 +119,9 @@ class Learner(object):
                                              self.actor.params, observations,
                                              temperature)
         self.rng = rng
-
+        actions = jnp.nan_to_num(actions)
         actions = np.asarray(actions)
+
         return np.clip(actions, -1, 1)
 
     def update(self, batch: Batch) -> InfoDict:
