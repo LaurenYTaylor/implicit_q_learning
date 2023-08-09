@@ -23,12 +23,12 @@ def polars_read(algos, eval_returns):
 
 sns.set_theme(style="darkgrid")
 folders = ["../logs/antmaze-umaze-v0_9/*.txt", "../logs/antmaze-umaze-v0_8_jsrl_ft/*.txt",
-           "../logs/antmaze-umaze-v0_10_jsrlgs_ft/*.txt"]
+           "../logs/antmaze-umaze-v0_11_jsrlgs_ft/*.txt"]
 
 eval_returns = [glob.glob(folder) for folder in folders]
 algos = ["IQL", "JSRL", "JSRL-GS"]
 
-print("Reading data...")
+print("Loading data...")
 all_data = polars_read(algos, eval_returns)
 print("Data loaded. Making plots..")
 

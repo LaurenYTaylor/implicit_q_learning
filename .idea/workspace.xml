@@ -5,19 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/parallel_training_ft.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/parallel_training_jsrl.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/parallel_training_jsrlgs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/implicit_q_learning.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/implicit_q_learning.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_finetune.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_finetune.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/parallel_training_jsrl.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training_jsrl.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/policy.py" beforeDir="false" afterPath="$PROJECT_DIR$/policy.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_jsrl.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_jsrl.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_jsrl_goalstate.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_jsrl_goalstate.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,7 +33,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "U:/Code/D4RL-master",
+    "last_opened_file_path": "U:/Code/spinningup-jsrl",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -65,7 +58,7 @@
       <workItem from="1688625192526" duration="1168000" />
       <workItem from="1689126307204" duration="439000" />
       <workItem from="1689132002225" duration="55871000" />
-      <workItem from="1689747049068" duration="45770000" />
+      <workItem from="1689747049068" duration="442978000" />
     </task>
     <servers />
   </component>

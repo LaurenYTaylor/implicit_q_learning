@@ -310,8 +310,8 @@ def main(seed, data_size, save_dir=None):
             for k, v in update_info.items():
                 if v.ndim == 0:
                     summary_writer.add_scalar(f'training/{k}', np.array(v), i)
-                else:
-                    summary_writer.add_histogram(f'training/{k}', np.array(v), i)
+                #else:
+                    #summary_writer.add_histogram(f'training/{k}', np.array(v), i)
             summary_writer.flush()
 
         if i % FLAGS.eval_interval == 0:
