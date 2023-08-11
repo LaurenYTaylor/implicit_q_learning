@@ -1,5 +1,6 @@
 import collections
 from typing import Optional
+import pickle
 
 import gym
 import numpy as np
@@ -80,8 +81,11 @@ class D4RLDataset(Dataset):
     def __init__(self,
                  env: gym.Env,
                  clip_to_eps: bool = True,
-                 eps: float = 1e-5):
-        dataset = d4rl.qlearning_dataset(env)
+                 eps: float = 1e-5,
+                 dataset: dict = None):
+
+        if dataset is None:
+            dataset = d4rl.qlearning_dataset(env)
 
         if clip_to_eps:
             lim = 1 - eps
