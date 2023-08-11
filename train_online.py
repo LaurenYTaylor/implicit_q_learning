@@ -184,7 +184,7 @@ def main(args=None):
         make_save_dir(args.load_model, args.env_name, args.algo, test=test)
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    config_str = f"{timestr}_s{args.seed}_d{args.init_dataset_size}"
+    config_str = f"{timestr}_s{args.seed}_d{args.init_dataset_size}_t{args.tolerance}_nd{args.n_prev_returns}"
 
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
@@ -201,11 +201,15 @@ def main(args=None):
         replay_buffer_offline.initialize_with_dataset(dataset, args.init_dataset_size)
 
     kwargs = vars(args)
-
-    with open(os.path.join(args.save_dir, config_str, 'params.txt'), "w") as f:
+    '''
+    if os.name == "nt":
+        params_name = os.path.join(args.save_dir, "model\\"+config_str, 'params.txt')
+    else:
+        params_name = os.path.join(args.save_dir, "model/" + config_str, 'params.txt')
+    with open(params_name, "w") as f:
         for k,v in kwargs.items():
             f.write(f"{k}: {v}\n")
-
+    '''
     pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
                                env.action_space.sample()[np.newaxis], **kwargs)
 
