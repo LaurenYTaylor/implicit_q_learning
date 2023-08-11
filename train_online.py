@@ -202,6 +202,10 @@ def main(args=None):
 
     kwargs = vars(args)
 
+    with open(os.path.join(args.save_dir, config_str, 'params.txt'), "w") as f:
+        for k,v in kwargs.items():
+            f.write(f"{k}: {v}\n")
+
     pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
                                env.action_space.sample()[np.newaxis], **kwargs)
 
