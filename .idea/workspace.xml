@@ -8,12 +8,11 @@
       <change afterPath="$PROJECT_DIR$/configs/training_configs.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/configs/antmaze_finetune_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/configs/antmaze_finetune_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/jsrl_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/jsrl_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jsrl_utils.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/learner.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/parallel_training_ft.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/parallel_training_jsrl.py" beforeDir="false" />
@@ -23,6 +22,7 @@
       <change beforePath="$PROJECT_DIR$/train_finetune.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/train_jsrl.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/train_jsrl_goalstate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/train_online.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,7 +73,7 @@
       <workItem from="1688625192526" duration="1168000" />
       <workItem from="1689126307204" duration="439000" />
       <workItem from="1689132002225" duration="55871000" />
-      <workItem from="1689747049068" duration="472482000" />
+      <workItem from="1689747049068" duration="474084000" />
     </task>
     <servers />
   </component>
