@@ -55,7 +55,7 @@ if __name__ == "__main__":
             else:
                 seeds = [0]
                 data_sizes = [1000, 10000, 100000, 1000000]
-                num_cpus = 16
+                num_cpus = 72
 
             algos = ["jsrl", "jsrlgs"]
 
