@@ -37,6 +37,9 @@ PARSER.add_argument('--tqdm', action="store_true", help='Use tqdm progress bar.'
 PARSER.add_argument('--opt_decay_schedule', default="", help="Decay schedule.")
 PARSER.add_argument('--warm_start', default=False, action="store_true", help='Warm-start actor, critics and '
                                                                              'value function.')
+PARSER.add_argument('--tolerance', default=0.05, help="return improvement +\- for moving to next curriculum stage.")
+PARSER.add_argument('--n_prev_returns', default=5, help='N previous returns to use to determine improvement.'
+                                                                             'value function.')
 PARSER.add_argument('--curriculum_stages', default=10, help='Curriculum stages.')
 PARSER.add_argument('--algo', default="ft", help='Algorithm.', choices=["ft", "jsrl", "jsrlgs"])
 
