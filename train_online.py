@@ -187,6 +187,7 @@ def main(args=None):
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     config_str = f"{timestr}_s{args.seed}_d{args.init_dataset_size}_t{args.tolerance}_nd{args.n_prev_returns}"
+    config_str = config_str.replace(".", "-")
 
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
