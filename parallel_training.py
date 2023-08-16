@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     if args.test:
         seeds = [0]
-        data_sizes = [1000]
+        data_sizes = [1000000]
         config["num_pretraining_steps"] = 100
         config["max_steps"] = 100
         num_cpus = 1
