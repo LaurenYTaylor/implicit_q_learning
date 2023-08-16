@@ -167,7 +167,6 @@ def main(args=None):
     ext_configs = get_config("online")
     if isinstance(args, dict):
         ext_configs.update(args)
-
     args, unknown = PARSER.parse_known_args()
 
     for k, v in ext_configs.items():
