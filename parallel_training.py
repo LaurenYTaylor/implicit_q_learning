@@ -51,9 +51,9 @@ if __name__ == "__main__":
     else:
         seeds = list(range(20))
         data_sizes = [1000, 10000, 100000, 1000000]
-        num_cpus = 16
+        num_cpus = 80
 
-    algos = ["jsrl", "jsrlgs"]
+    algos = ["ft", "jsrl", "jsrlgs"]
 
     ray.init(num_cpus=num_cpus)
     for algo in algos:
