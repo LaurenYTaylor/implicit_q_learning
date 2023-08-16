@@ -3,8 +3,8 @@ from train_online import main, make_save_dir
 from memory_profiler import profile
 
 config = {"env_name": "antmaze-umaze-v0",
-          "num_pretraining_steps": 1e6,
-          "max_steps": 1e6}
+          "num_pretraining_steps": 1000000,
+          "max_steps": 1000000}
 
 @ray.remote
 def run_training(seed, n_data, algo, save_dir):
@@ -42,23 +42,24 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
     args = parser.parse_args()
 
+    if args.test:
+        seeds = [0]
+        data_sizes = [1000]
+        config["num_pretraining_steps"] = 100
+        config["max_steps"] = 100
+        num_cpus = 1
+    else:
+        seeds = [0]
+        data_sizes = [1000, 10000, 100000, 1000000]
+        num_cpus = 72
+    ray.init(num_cpus=num_cpus)
+
     for tolerance in [0, 0.05, 0.1]:
         for n_prev in [1, 5, 10]:
             config["tolerance"] = tolerance
             config["n_prev_returns"] = n_prev
-            if args.test:
-                seeds = [0]
-                data_sizes = [1000]
-                config["num_pretraining_steps"] = 100
-                config["max_steps"] = 100
-                num_cpus = 1
-            else:
-                seeds = [0]
-                data_sizes = [1000, 10000, 100000, 1000000]
-                num_cpus = 72
 
             algos = ["jsrl", "jsrlgs"]
 
-            ray.init(num_cpus=num_cpus)
             for algo in algos:
                 run(seeds, data_sizes, algo, num_cpus)
