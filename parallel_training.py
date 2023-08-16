@@ -3,8 +3,8 @@ from train_online import main, make_save_dir
 from memory_profiler import profile
 
 config = {"env_name": "antmaze-umaze-v0",
-          "num_pretraining_steps": 1e6,
-          "max_steps": 1e6}
+          "num_pretraining_steps": 1000000,
+          "max_steps": 1000000}
 
 @ray.remote
 def run_training(seed, n_data, algo, save_dir):
