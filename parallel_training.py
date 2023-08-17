@@ -54,7 +54,7 @@ if __name__ == "__main__":
         data_sizes = [1000, 10000, 100000, 1000000]
         num_cpus = 80
 
-    algos = ["jsrlgs"]
+    algos = ["jsrl"]
 
     ray.init(num_cpus=num_cpus)
     for algo in algos:
