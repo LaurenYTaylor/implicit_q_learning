@@ -164,18 +164,20 @@ class ReplayBuffer(Dataset):
         self.next_observations[:num_samples] = dataset.next_observations[
             indices]
 
-        self.insert_index = num_samples
+        self.insert_index = num_samples % self.capacity
         self.size = num_samples
 
     def insert(self, observation: np.ndarray, action: np.ndarray,
                reward: float, mask: float, done_float: float,
                next_observation: np.ndarray):
+        print("idx: ", self.insert_index)
+        print("cap: ", self.capacity)
+        print("size: ", self.size)
         self.observations[self.insert_index] = observation
         self.actions[self.insert_index] = action
         self.rewards[self.insert_index] = reward
         self.masks[self.insert_index] = mask
         self.dones_float[self.insert_index] = done_float
         self.next_observations[self.insert_index] = next_observation
-
         self.insert_index = (self.insert_index + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)

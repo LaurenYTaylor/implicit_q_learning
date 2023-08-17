@@ -197,7 +197,7 @@ def main(args=None):
 
     if args.algo == "ft":
         replay_buffer_online = ReplayBuffer(env.observation_space, action_dim,
-                                            args.init_dataset_size)
+                                            args.max_steps)
         replay_buffer_online.initialize_with_dataset(dataset, args.init_dataset_size)
     else:
         replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, args.replay_buffer_size or args.max_steps)
