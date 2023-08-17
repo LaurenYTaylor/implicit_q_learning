@@ -4,7 +4,6 @@ from memory_profiler import profile
 
 @ray.remote
 def run_training(seed, n_data, algo, save_dir, config):
-    print(config)
     config["seed"] = seed
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
@@ -45,10 +44,11 @@ if __name__ == "__main__":
 
     if args.test:
         seeds = [0]
-        data_sizes = [1000000]
-        config["num_pretraining_steps"] = 100
-        config["max_steps"] = 100
-        num_cpus = 1
+        data_sizes = [1000]
+        config["num_pretraining_steps"] = 1000
+        config["max_steps"] = 1000
+        config["eval_interval"] = 40
+        num_cpus = 4
     else:
         seeds = list(range(20))
         data_sizes = [1000, 10000, 100000, 1000000]
