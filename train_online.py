@@ -12,6 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 import glob
 import re
 
+
 import wrappers
 from dataset_utils import (Batch, D4RLDataset, Dataset, ReplayBuffer,
                            split_into_trajectories)
@@ -327,13 +328,13 @@ def main(args=None):
             if i < 1 or args.algo == "ft":
                 eval_stats = evaluate(agent, env, args.eval_episodes)
             else:
-                eval_stats = evaluate_jsrl(agent, env, args.eval_episodes, pretrained_agent, horizons[horizon_idx])
+                eval_stats = evaluate_jsrl(agent, env, args.eval_episodes, pretrained_agent, horizons[horizon_idx], args.algo)
             for k, v in eval_stats.items():
                 summary_writer.add_scalar(f'evaluation/average_{k}s', v, i)
             summary_writer.flush()
 
             eval_returns.append((i, eval_stats['return']))
-            np.savetxt(os.path.join(args.save_dir, timestr + f"_s{args.seed}_d{args.init_dataset_size}.txt"),
+            np.savetxt(os.path.join(args.save_dir, config_str+".txt"),
                        eval_returns,
                        fmt=['%d', '%.1f'])
             if args.algo != "ft" and i > 0:

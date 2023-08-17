@@ -5,23 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/configs/training_configs.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/configs/antmaze_finetune_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/configs/antmaze_finetune_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/jsrl_utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/parallel_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/parallel_training_ft.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/parallel_training_jsrl.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/parallel_training_jsrlgs.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/policy.py" beforeDir="false" afterPath="$PROJECT_DIR$/policy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_finetune.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_jsrl.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_jsrl_goalstate.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parallel_training_tolerances.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training_tolerances.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_online.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -45,12 +31,13 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "U:/Code/spinningup-jsrl",
+    "last_opened_file_path": "U:/Code/implicit_q_learning",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "configurable.group.editor",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -63,6 +50,9 @@
     </key>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\a1899783\AppData\Roaming\Subversion</configuration>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="" />
@@ -73,7 +63,11 @@
       <workItem from="1688625192526" duration="1168000" />
       <workItem from="1689126307204" duration="439000" />
       <workItem from="1689132002225" duration="55871000" />
-      <workItem from="1689747049068" duration="487084000" />
+      <workItem from="1689747049068" duration="488116000" />
+      <workItem from="1692161764921" duration="3974000" />
+      <workItem from="1692166708378" duration="2410000" />
+      <workItem from="1692169684920" duration="26000" />
+      <workItem from="1692228931827" duration="2729000" />
     </task>
     <servers />
   </component>
