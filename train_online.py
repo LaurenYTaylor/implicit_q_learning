@@ -109,7 +109,6 @@ def update_horizon(returns, horizon_idx, prev_best, tolerance=0.05, n=5):
         prev_best = rolling_mean
         return horizon_idx + 1, prev_best
     else:
-        prev_best = rolling_mean
         return horizon_idx, prev_best
 
 

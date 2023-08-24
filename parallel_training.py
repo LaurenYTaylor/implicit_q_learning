@@ -25,7 +25,6 @@ def run(seeds, data_sizes, algos, config):
         run_training.remote(seed, data_size, algos[i], save_dirs[i], config) for i in range(len(algos))
         for data_size in data_sizes for seed in seeds
     ]
-    print(object_references)
 
     all_data = []
     while len(object_references) > 0:
