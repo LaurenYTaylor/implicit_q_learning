@@ -6,6 +6,7 @@ import argparse
 from configs.training_configs import get_config
 
 import gym
+import flappy_bird_gym
 import numpy as np
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -66,7 +67,10 @@ def normalize(dataset):
 
 def make_env_and_dataset(env_name: str,
                          seed: int, downloaded_dataset="") -> Tuple[gym.Env, D4RLDataset]:
-    env = gym.make(env_name)
+    if "flappy" in env_name:
+        env = flappy_bird_gym.make(env_name)
+    else:
+        env = gym.make(env_name)
 
     env = wrappers.EpisodeMonitor(env)
     env = wrappers.SinglePrecision(env)
@@ -105,6 +109,7 @@ def update_horizon(returns, horizon_idx, prev_best, tolerance=0.05, n=5):
         prev_best = rolling_mean
         return horizon_idx + 1, prev_best
     else:
+        prev_best = rolling_mean
         return horizon_idx, prev_best
 
 
@@ -146,17 +151,11 @@ def setup_learner(env, pretrained_agent, kwargs):
     learning_agent = Learner(env.observation_space.sample()[np.newaxis],
                              env.action_space.sample()[np.newaxis], **kwargs)
     if kwargs["warm_start"]:
-        if kwargs["load_model"]:
-            learning_agent.actor = pretrained_agent.actor.load(kwargs["load_model"] + "actor")
-            learning_agent.critic = pretrained_agent.critic.load(kwargs["load_model"] + "critic")
-            learning_agent.value = pretrained_agent.value.load(kwargs["load_model"] + "value")
-            learning_agent.target_critic = pretrained_agent.target_critic.load(kwargs["load_model"] + "target_critic")
-        else:
-            learning_agent.actor = learning_agent.actor.replace(params=pretrained_agent.actor.params)
-            learning_agent.critic = learning_agent.critic.replace(params=pretrained_agent.critic.params)
-            learning_agent.value = learning_agent.value.replace(params=pretrained_agent.value.params)
-            learning_agent.target_critic = \
-                learning_agent.target_critic.replace(params=pretrained_agent.target_critic.params)
+        learning_agent.actor = learning_agent.actor.replace(params=pretrained_agent.actor.params)
+        learning_agent.critic = learning_agent.critic.replace(params=pretrained_agent.critic.params)
+        learning_agent.value = learning_agent.value.replace(params=pretrained_agent.value.params)
+        learning_agent.target_critic = \
+            learning_agent.target_critic.replace(params=pretrained_agent.target_critic.params)
     return learning_agent
 
 
@@ -193,43 +192,51 @@ def main(args=None):
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    action_dim = env.action_space.shape[0]
+
+    try:
+        action_dim = env.action_space.shape[0]
+    except IndexError:
+        #action_dim = env.action_space.n
+        action_dim = 0
 
     if args.algo == "ft":
         replay_buffer_online = ReplayBuffer(env.observation_space, action_dim,
-                                            args.max_steps)
+                                            max(args.max_steps, args.init_dataset_size))
         replay_buffer_online.initialize_with_dataset(dataset, args.init_dataset_size)
     else:
-        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, args.replay_buffer_size or args.max_steps)
+        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, 100000)
+        #replay_buffer_online.initialize_with_dataset(dataset, 100000)
         replay_buffer_offline = ReplayBuffer(env.observation_space, action_dim, args.init_dataset_size)
         replay_buffer_offline.initialize_with_dataset(dataset, args.init_dataset_size)
 
     kwargs = vars(args)
-    '''
-    if os.name == "nt":
-        params_name = os.path.join(args.save_dir, "model\\"+config_str, 'params.txt')
-    else:
-        params_name = os.path.join(args.save_dir, "model/" + config_str, 'params.txt')
-    with open(params_name, "w") as f:
-        for k,v in kwargs.items():
-            f.write(f"{k}: {v}\n")
-    '''
-    pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
-                               env.action_space.sample()[np.newaxis], **kwargs)
 
     eval_returns = []
     agent_type = []
     observation, done = env.reset(), False
+    time_step = 0
     if args.algo != "ft":
         horizon_idx = 0
-        time_step = 0
         eval_returns = []
 
     if args.load_model:
         steps = range(1, args.max_steps + 1)
+        pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
+                                   env.action_space.sample()[np.newaxis], **kwargs)
+        dirs = glob.glob(args.load_model)
+        for d in dirs:
+            if d.split("_", 1)[1] == config_str.split("_", 1)[1]:
+                pretrained_agent.actor = pretrained_agent.actor.load(args.load_model + f"/{d}/pretrained_actor")
+                pretrained_agent.critic = pretrained_agent.critic.load(args.load_model + f"/{d}/pretrained_critic")
+                pretrained_agent.value = pretrained_agent.value.load(args.load_model + f"/{d}/pretrained_value")
+                pretrained_agent.target_critic = pretrained_agent.target_critic.load(
+                    args.load_model + f"/{d}/pretrained_target_critic")
     else:
         steps = range(1 - args.num_pretraining_steps,
                       args.max_steps + 1)
+        pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
+                                   env.action_space.sample()[np.newaxis], **kwargs)
+
 
     # Use negative indices for pretraining steps.
     for i in tqdm.tqdm(steps, smoothing=0.1, disable=not args.tqdm):
@@ -244,16 +251,26 @@ def main(args=None):
                     learning_agent = setup_learner(env, pretrained_agent, kwargs)
                     if "gs" in args.algo:
                         horizon = evaluate(pretrained_agent, env, 100)['goal_dist']
+                        horizons = np.linspace(0, horizon, args.curriculum_stages)
                     else:
                         horizon = evaluate(pretrained_agent, env, 100)['length']
-                    horizons = np.linspace(horizon, 0, args.curriculum_stages)
+                        horizons = np.linspace(horizon, 0, args.curriculum_stages)
+
                     save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
             if args.algo == "jsrlgs":
-                h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
+                if "antmaze" in args.env_name:
+                    h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
+                else:
+                    h = np.abs(observation[1])
             elif args.algo == "jsrl":
                 h = time_step
 
-            if args.algo != "ft" and h <= horizons[horizon_idx]:
+            if args.algo == "jsrl" and h <= horizons[horizon_idx]:
+                print(f"horizon: {h}, thresh: {horizons[horizon_idx]}")
+                action = pretrained_agent.sample_actions(observation, )
+                agent_type.append(0.0)
+            elif args.algo == "jsrlgs" and h >= horizons[horizon_idx]:
+                print(f"horizon: {h}, thresh: {horizons[horizon_idx]}")
                 action = pretrained_agent.sample_actions(observation, )
                 agent_type.append(0.0)
             else:
@@ -273,6 +290,7 @@ def main(args=None):
             observation = next_observation
 
             if done:
+                #it, count = np.unique(agent_type, return_counts=True)
                 observation, done = env.reset(), False
                 time_step = 0
                 for k, v in info['episode'].items():
@@ -280,7 +298,7 @@ def main(args=None):
                                               info['total']['timesteps'])
                 if args.algo != "ft":
                     summary_writer.add_scalar('training/horizon', horizons[horizon_idx], i)
-                    summary_writer.add_scalar('training/horizon', np.mean(agent_type), i)
+                    summary_writer.add_scalar('training/agent_type', np.mean(agent_type), i)
                     agent_type = []
                 summary_writer.flush()
             else:
@@ -314,7 +332,10 @@ def main(args=None):
         else:
             agent = pretrained_agent
 
-        update_info = agent.update(batch)
+        # don't update until there's a batch size of online data in buffer
+        # 0.75*batch size because jsrl takes 75% of batch from online buffer and 25% from offline
+        if i < 1 or i >= int(0.75*args.batch_size)+1:
+            update_info = agent.update(batch)
 
         if i % args.log_interval == 0:
             for k, v in update_info.items():

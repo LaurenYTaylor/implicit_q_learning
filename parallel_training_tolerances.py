@@ -68,6 +68,5 @@ if __name__ == "__main__":
     ray.init(num_cpus=num_cpus)
 
     algos = ["jsrl", "jsrlgs"]
-    #run(seeds, data_sizes, algos, config, tolerances=[0, 0.05, 0.1], n_prevs=[1, 5, 10])
-    run(seeds, data_sizes, algos, config, tolerances=[0], n_prevs=[1])
+    run(seeds, data_sizes, algos, config, tolerances=[0, 0.05, 0.1], n_prevs=[1, 5, 10])
     print(f"End: {(time.time()-start)/60} min")

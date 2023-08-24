@@ -7,5 +7,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="d4rl" />
     <orderEntry type="module" module-name="D4RL-master" />
+    <orderEntry type="module" module-name="gym" />
   </component>
 </module>
