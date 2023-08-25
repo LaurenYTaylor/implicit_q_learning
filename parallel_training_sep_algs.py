@@ -3,26 +3,22 @@ from train_online import main, make_save_dir
 from memory_profiler import profile
 
 @ray.remote
-def run_training(seed, n_data, algo, save_dir, config):
-
+def run_training(seed, n_data, save_dir, config):
     config["seed"] = seed
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
-    #config["downloaded_dataset"] = f"datasets/antmaze_umaze_{n_data}.pkl"
-    config["algo"] = algo
+    config["downloaded_dataset"] = f"datasets/antmaze_umaze_{n_data}.pkl"
     return main(config)
 
 
-def run(seeds, data_sizes, algos, config):
+def run(seeds, data_sizes, config):
     if config["max_steps"] <= 1000:
         test = True
     else:
         test = False
-    save_dirs = []
-    for algo in algos:
-        save_dirs.append(make_save_dir(False, "antmaze-umaze-v0", algo, test=False))
+    save_dir = make_save_dir(False, "antmaze-umaze-v0", config["algo"], test=test)
     object_references = [
-        run_training.remote(seed, data_size, algos[i], save_dirs[i], config) for i in range(len(algos))
+        run_training.remote(seed, data_size, save_dir, config)
         for data_size in data_sizes for seed in seeds
     ]
 
@@ -43,9 +39,8 @@ if __name__ == "__main__":
 
     config = {"env_name": "antmaze-umaze-v0",
               "num_pretraining_steps": 1000000,
-              "max_steps": 1000000}
-
-    algos = ["ft", "jsrl", "jsrlgs"]
+              "max_steps": 1000000,
+              "algo": "ft"}
 
     if args.test:
         seeds = [0]
@@ -57,10 +52,8 @@ if __name__ == "__main__":
     else:
         seeds = list(range(20))
         data_sizes = [1000, 10000, 100000, 1000000]
-        #config["num_pretraining_steps"] = 100000
-        #config["max_steps"] = 100000
-        num_cpus = min(80, len(data_sizes)*len(seeds)*len(algos))
+        num_cpus = min(80, len(data_sizes)*len(seeds))
 
     ray.init(num_cpus=num_cpus)
-    #for algo in algos:
-    run(seeds, data_sizes, algos, config)
+
+    run(seeds, data_sizes, config)

@@ -170,9 +170,6 @@ class ReplayBuffer(Dataset):
     def insert(self, observation: np.ndarray, action: np.ndarray,
                reward: float, mask: float, done_float: float,
                next_observation: np.ndarray):
-        print("idx: ", self.insert_index)
-        print("cap: ", self.capacity)
-        print("size: ", self.size)
         self.observations[self.insert_index] = observation
         self.actions[self.insert_index] = action
         self.rewards[self.insert_index] = reward

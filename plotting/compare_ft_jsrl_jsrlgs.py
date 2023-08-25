@@ -21,22 +21,26 @@ def polars_read(algos, eval_returns):
             datas.append(data)
     return pl.concat(datas)
 
-sns.set_theme(style="darkgrid")
-folders = ["../logs/antmaze-umaze-v0_9/*.txt", "../logs/antmaze-umaze-v0_8_jsrl_ft/*.txt",
-           "../logs/antmaze-umaze-v0_11_jsrlgs_ft/*.txt"]
+if __name__ == "__main__":
+    sns.set_theme(style="darkgrid")
+    folders = ["logs/antmaze-umaze-v0_34_jsrlgs_ft/*.txt", "logs/antmaze-umaze-v0_33_jsrl_ft/*.txt", "logs/antmaze-umaze-v0_32_ft_ft/*.txt"]
 
-eval_returns = [glob.glob(folder) for folder in folders]
-algos = ["IQL", "JSRL", "JSRL-GS"]
+    eval_returns = [glob.glob(folder) for folder in folders]
+    algos = ["JSRL-GS", "JSRL", "FT"]
 
-print("Loading data...")
-all_data = polars_read(algos, eval_returns)
-print("Data loaded. Making plots..")
+    print("Loading data...")
+    try:
+        all_data = polars_read(algos, eval_returns)
+    except ValueError:
+        print(f"No data in {folders}.")
+        exit()
+    print("Data loaded. Making plots..")
 
-ax = sns.lineplot(x="Time Step", y="Return", hue="Algo",
-                    style="N data", data=all_data)
-ax.axvline(0, color="grey", linestyle="dashed", alpha=0.8)
-ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
-ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
-print("Plots made. Saving plots...")
-plt.savefig("plots/partial_coldstart.png")
-plt.show()
+    ax = sns.lineplot(x="Time Step", y="Return", hue="Algo",
+                        style="N data", data=all_data)
+    ax.axvline(0, color="grey", linestyle="dashed", alpha=0.8)
+    ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
+    ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
+    print("Plots made. Saving plots...")
+    #plt.savefig("plotting/plots/wtf.png")
+    plt.show()

@@ -5,9 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/dataset_check.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/parallel_training_sep_algs.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_flappy_bird.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/train_flappy_bird.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/implicit_q_learning.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/implicit_q_learning.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/parallel_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_online.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -31,7 +39,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "U:/Code/CQL-JSRL",
+    "last_opened_file_path": "C:/Users/a1899783/AppData/Local/anaconda3/envs/py310/Lib/site-packages/gym",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -69,6 +77,9 @@
       <workItem from="1692169684920" duration="26000" />
       <workItem from="1692228931827" duration="3555000" />
       <workItem from="1692240049493" duration="2400000" />
+      <workItem from="1692242980973" duration="876000" />
+      <workItem from="1692245578751" duration="4325000" />
+      <workItem from="1692755352615" duration="34959000" />
     </task>
     <servers />
   </component>

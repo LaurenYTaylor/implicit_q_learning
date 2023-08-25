@@ -1,17 +1,10 @@
-import os
-os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
-                           "intra_op_parallelism_threads=1")
-
 import ray
 from train_online import main, make_save_dir
 from memory_profiler import profile
 import time
 
-config = {"env_name": "antmaze-umaze-v0",
-          "num_pretraining_steps": 1000000,
-          "max_steps": 1000000}
-
 @ray.remote
+#@profile
 def run_training(seed, n_data, tolerance, n_prev, algo, save_dir, config):
     config["seed"] = seed
     config["init_dataset_size"] = n_data
