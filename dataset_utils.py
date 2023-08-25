@@ -104,7 +104,7 @@ class D4RLDataset(Dataset):
         dones_float[-1] = 1
 
         super().__init__(dataset['observations'].astype(np.float32),
-                         actions=dataset['actions'].astype(np.float32),
+                         actions=dataset['actions'].astype(dataset['actions'].dtype),
                          rewards=dataset['rewards'].astype(np.float32),
                          masks=1.0 - dataset['terminals'].astype(np.float32),
                          dones_float=dones_float.astype(np.float32),
@@ -119,7 +119,10 @@ class ReplayBuffer(Dataset):
 
         observations = np.empty((capacity, *observation_space.shape),
                                 dtype=observation_space.dtype)
-        actions = np.empty((capacity, action_dim), dtype=np.float32)
+        if action_dim == 1:
+            actions = np.empty((capacity, action_dim), dtype=np.int64)
+        else:
+            actions = np.empty((capacity, action_dim), dtype=np.float32)
         rewards = np.empty((capacity, ), dtype=np.float32)
         masks = np.empty((capacity, ), dtype=np.float32)
         dones_float = np.empty((capacity, ), dtype=np.float32)
@@ -157,6 +160,7 @@ class ReplayBuffer(Dataset):
             indices = np.arange(num_samples)
 
         self.observations[:num_samples] = dataset.observations[indices]
+
         self.actions[:num_samples] = dataset.actions[indices]
         self.rewards[:num_samples] = dataset.rewards[indices]
         self.masks[:num_samples] = dataset.masks[indices]

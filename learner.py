@@ -12,6 +12,7 @@ import value_net
 from actor import update as awr_update_actor
 from common import Batch, InfoDict, Model, PRNGKey
 from critic import update_q, update_v
+from functools import partial
 
 
 def target_update(critic: Model, target_critic: Model, tau: float) -> Model:
@@ -74,6 +75,12 @@ class Learner(object):
         rng, actor_key, critic_key, value_key = jax.random.split(rng, 4)
 
         action_dim = actions.shape[-1]
+
+        if actions[0][0].dtype == np.int64:
+            self.activation = lambda x: int(x>=0.5)
+        else:
+            self.activation = jnp.identity
+
         actor_def = policy.NormalTanhPolicy(hidden_dims,
                                             action_dim,
                                             log_std_scale=1e-3,
@@ -122,7 +129,7 @@ class Learner(object):
         actions = jnp.nan_to_num(actions)
         actions = np.asarray(actions)
 
-        return np.clip(actions, -1, 1)
+        return np.clip(self.activation(actions), -1, 1)
 
     def update(self, batch: Batch) -> InfoDict:
         new_rng, new_actor, new_critic, new_value, new_target_critic, info = _update_jit(
