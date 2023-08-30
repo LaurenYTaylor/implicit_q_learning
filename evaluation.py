@@ -42,7 +42,7 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
              num_episodes: int, pretrained_agent: nn.Module,
             horizon: int, algo: str) -> Dict[str, float]:
     stats = {'return': [], 'length': []}
-
+    agent_type = []
     for _ in range(num_episodes):
         time_step = 0
         observation, done = env.reset(), False
@@ -55,10 +55,16 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
                     h = np.abs(observation[1])
                 if h >= horizon:
                     agent = pretrained_agent
+                    agent_type.append(0.0)
+                else:
+                    agent_type.append(1.0)
             elif algo == "jsrl":
                 h = time_step
                 if h <= horizon:
                     agent = pretrained_agent
+                    agent_type.append(0.0)
+                else:
+                    agent_type.append(1.0)
 
 
             action = agent.sample_actions(observation, temperature=0.0)
@@ -70,5 +76,6 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
 
     for k, v in stats.items():
         stats[k] = np.mean(v)
+    stats['agent_type'] = np.mean(agent_type)
     return stats
 
