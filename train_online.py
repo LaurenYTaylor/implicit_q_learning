@@ -103,7 +103,7 @@ def make_env_and_dataset(env_name: str,
 def update_horizon(returns, horizon_idx, prev_best, tolerance=0.05, n=5):
     if len(returns) < n:
         return horizon_idx, prev_best
-    rolling_mean = np.mean(returns[-5:])
+    rolling_mean = np.mean(returns[-n:])
     if np.isinf(prev_best):
         prev = prev_best
     else:
@@ -253,13 +253,14 @@ def main(args=None):
                     n_offline_samp = args.batch_size - n_online_samp
                     learning_agent = setup_learner(env, pretrained_agent, kwargs)
                     if "gs" in args.algo:
-                        horizon = evaluate(pretrained_agent, env, 100)['goal_dist']
+                        horizon = np.max(evaluate(pretrained_agent, env, 100)['goal_dist'])
                         horizons = np.linspace(0, horizon, args.curriculum_stages)
                     else:
                         horizon = evaluate(pretrained_agent, env, 100)['length']
                         horizons = np.linspace(horizon, 0, args.curriculum_stages)
 
                     save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
+
             if args.algo == "jsrlgs":
                 if "antmaze" in args.env_name:
                     h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
@@ -299,7 +300,6 @@ def main(args=None):
                     summary_writer.add_scalar(f'training/{k}', v,
                                               info['total']['timesteps'])
                 if args.algo != "ft":
-                    summary_writer.add_scalar('training/horizon', horizons[horizon_idx], i)
                     summary_writer.add_scalar('training/agent_type', np.mean(agent_type), i)
                     agent_type = []
                 summary_writer.flush()
@@ -353,6 +353,8 @@ def main(args=None):
             else:
                 eval_stats = evaluate_jsrl(agent, env, args.eval_episodes, pretrained_agent, horizons[horizon_idx], args.algo)
             for k, v in eval_stats.items():
+                if isinstance(v, list):
+                    v = np.mean(v)
                 summary_writer.add_scalar(f'evaluation/average_{k}s', v, i)
             summary_writer.flush()
 
@@ -364,6 +366,7 @@ def main(args=None):
                 if len(horizons) > 0 and horizon_idx != len(horizons) - 1:
                     horizon_idx, prev_best = update_horizon([e[1] for e in eval_returns], horizon_idx, prev_best,
                                                             tolerance=args.tolerance, n=args.n_prev_returns)
+                summary_writer.add_scalar('training/horizon', horizon_idx, i)
     summary_writer.close()
     save_model(learning_agent, args.save_dir + f"/model/{config_str}", type="final_")
 

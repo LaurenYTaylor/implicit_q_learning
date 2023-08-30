@@ -23,16 +23,18 @@ def polars_read(algos, eval_returns):
 
 if __name__ == "__main__":
     sns.set_theme(style="darkgrid")
-    folders = ["logs/antmaze-umaze-v0_34_jsrlgs_ft/*.txt", "logs/antmaze-umaze-v0_33_jsrl_ft/*.txt", "logs/antmaze-umaze-v0_32_ft_ft/*.txt"]
+    folders = ["results/all_variants_results/jsrlgs/*.txt", "results/all_variants_results/ft/*.txt"]
 
     eval_returns = [glob.glob(folder) for folder in folders]
-    algos = ["JSRL-GS", "JSRL", "FT"]
+    algos = ["JSRL-GS", "FT"]
+
+    assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
 
     print("Loading data...")
     try:
         all_data = polars_read(algos, eval_returns)
     except ValueError:
-        print(f"No data in {folders}.")
+        print(f"Folders in {folders} are empty or do not exist.")
         exit()
     print("Data loaded. Making plots..")
 

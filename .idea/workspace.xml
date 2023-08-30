@@ -5,12 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/plotting/compare_tolerances.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/wrappers/expand_action_dim_wrapper.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/actor.py" beforeDir="false" afterPath="$PROJECT_DIR$/actor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/learner.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/parallel_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/policy.py" beforeDir="false" afterPath="$PROJECT_DIR$/policy.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run_flappy_bird.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_flappy_bird.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_flappy_bird.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_flappy_bird.py" afterDir="false" />
@@ -79,7 +82,7 @@
       <workItem from="1692242980973" duration="876000" />
       <workItem from="1692245578751" duration="4325000" />
       <workItem from="1692755352615" duration="40257000" />
-      <workItem from="1692920671781" duration="23178000" />
+      <workItem from="1692920671781" duration="38460000" />
     </task>
     <servers />
   </component>

@@ -20,7 +20,7 @@ def run(seeds, data_sizes, algos, config):
         test = False
     save_dirs = []
     for algo in algos:
-        save_dirs.append(make_save_dir(False, "antmaze-umaze-v0", algo, test=False))
+        save_dirs.append(make_save_dir(False, "antmaze-umaze-v0-max", algo, test=False))
     object_references = [
         run_training.remote(seed, data_size, algos[i], save_dirs[i], config) for i in range(len(algos))
         for data_size in data_sizes for seed in seeds
@@ -45,15 +45,17 @@ if __name__ == "__main__":
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000}
 
-    algos = ["ft", "jsrl", "jsrlgs"]
+    algos = ["jsrl", "jsrlgs"]
 
     if args.test:
         seeds = [0]
-        data_sizes = [1000]
-        config["num_pretraining_steps"] = 1000
-        config["max_steps"] = 1000
-        config["eval_interval"] = 700
-        num_cpus = 1
+        data_sizes = [1000000]
+        config["num_pretraining_steps"] = 80000
+        config["max_steps"] = 20000
+        #config["num_pretraining_steps"] = 100
+        #config["max_steps"] = 100
+        config["eval_interval"] = 1000
+        num_cpus = 2
     else:
         seeds = list(range(20))
         data_sizes = [1000, 10000, 100000, 1000000]

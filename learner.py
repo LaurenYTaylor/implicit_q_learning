@@ -79,7 +79,7 @@ class Learner(object):
         if actions[0][0].dtype == np.int64:
             self.activation = lambda x: int(x>=0.5)
         else:
-            self.activation = jnp.identity
+            self.activation = lambda x: x
 
         actor_def = policy.NormalTanhPolicy(hidden_dims,
                                             action_dim,
