@@ -6,7 +6,7 @@ import argparse
 from configs.training_configs import get_config
 
 import gym
-#import flappy_bird_gym
+import flappy_bird_gym
 import numpy as np
 import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -67,10 +67,13 @@ def normalize(dataset):
 
 def make_env_and_dataset(env_name: str,
                          seed: int, downloaded_dataset="") -> Tuple[gym.Env, D4RLDataset]:
-    if "flappy" in env_name:
-        env = flappy_bird_gym.make(env_name)
+
+    if "Flappy" in env_name:
+        env = wrappers.DecreaseActionDim(flappy_bird_gym.make(env_name))
+        clip_to_eps = False
     else:
         env = gym.make(env_name)
+        clip_to_eps = True
 
     env = wrappers.EpisodeMonitor(env)
     env = wrappers.SinglePrecision(env)
@@ -83,7 +86,7 @@ def make_env_and_dataset(env_name: str,
     if downloaded_dataset:
         with open(downloaded_dataset, "rb") as f:
             dataset = pickle.load(f)
-    dataset = D4RLDataset(env, dataset=dataset)
+    dataset = D4RLDataset(env, dataset=dataset, clip_to_eps=clip_to_eps)
 
     if 'antmaze' in env_name:
         dataset.rewards -= 1.0
@@ -185,7 +188,7 @@ def main(args=None):
         make_save_dir(args.load_model, args.env_name, args.algo, test=test)
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    config_str = f"{timestr}_s{args.seed}_d{args.init_dataset_size}_t{args.tolerance}_nd{args.n_prev_returns}"
+    config_str = f"{timestr}_s{args.seed}_d{args.init_dataset_size}_t{args.tolerance}_nd{args.n_prev_returns}_{args.downloaded_dataset[9:-4]}"
     config_str = config_str.replace(".", "-")
 
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
@@ -196,7 +199,7 @@ def main(args=None):
         action_dim = env.action_space.shape[0]
     except IndexError:
         #action_dim = env.action_space.n
-        action_dim = 0
+        action_dim = 1
 
     if args.algo == "ft":
         replay_buffer_online = ReplayBuffer(env.observation_space, action_dim,
@@ -233,14 +236,13 @@ def main(args=None):
     else:
         steps = range(1 - args.num_pretraining_steps,
                       args.max_steps + 1)
+
         pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
                                    env.action_space.sample()[np.newaxis], **kwargs)
 
 
     # Use negative indices for pretraining steps.
     for i in tqdm.tqdm(steps, smoothing=0.1, disable=not args.tqdm):
-        if i%10000 == 0:
-            print(f"{config_str}: Time Step {i}")
         if i >= 1:
             if i == 1:
                 if args.algo == "ft":
@@ -275,8 +277,9 @@ def main(args=None):
             else:
                 action = learning_agent.sample_actions(observation, )
                 agent_type.append(1.0)
+            if isinstance(env.action_space, gym.spaces.Box):
+                action = np.clip(action, -1, 1)
 
-            action = np.clip(action, -1, 1)
             next_observation, reward, done, info = env.step(action)
 
             if not done or 'TimeLimit.truncated' in info:

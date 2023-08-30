@@ -79,5 +79,7 @@ def sample_actions(rng: PRNGKey,
                    actor_params: Params,
                    observations: np.ndarray,
                    temperature: float = 1.0) -> Tuple[PRNGKey, jnp.ndarray]:
-    return _sample_actions(rng, actor_def, actor_params, observations,
+    actions = _sample_actions(rng, actor_def, actor_params, observations,
                            temperature)
+    return actions
+

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     config = {"env_name": "antmaze-umaze-v0",
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000,
-              "algo": "ft"}
+              "algo": "jsrl"}
 
     if args.test:
         seeds = [0]

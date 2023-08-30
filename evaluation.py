@@ -25,6 +25,7 @@ def evaluate(agent: nn.Module, env: gym.Env,
                 all_dists.append(dist)
             except AttributeError:
                 max_dist = 0
+
             action = agent.sample_actions(observation, temperature=0.0)
             observation, _, done, info = env.step(action)
 
@@ -48,7 +49,10 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
         while not done:
             agent = learning_agent
             if algo == "jsrlgs":
-                h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
+                if "antmaze" in env.unwrapped.spec.id:
+                    h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
+                else:
+                    h = np.abs(observation[1])
                 if h >= horizon:
                     agent = pretrained_agent
             elif algo == "jsrl":

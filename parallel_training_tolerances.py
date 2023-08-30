@@ -58,7 +58,7 @@ if __name__ == "__main__":
         config["eval_interval"] = 100
         num_cpus = 8
     else:
-        seeds = [0,1,2]
+        seeds = [0]
         data_sizes = [1000, 10000, 100000, 1000000]
         num_cpus = 72
     ray.init(num_cpus=num_cpus)

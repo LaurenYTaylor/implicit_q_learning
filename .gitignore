@@ -151,6 +151,7 @@ logs/
 test_logs/
 plotting/plots
 datasets
+sb3_logs
 datasets.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
