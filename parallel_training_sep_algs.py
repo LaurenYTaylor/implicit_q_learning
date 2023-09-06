@@ -50,7 +50,7 @@ if __name__ == "__main__":
         config["eval_interval"] = 700
         num_cpus = 1
     else:
-        seeds = list(range(20))
+        seeds = list(range(5))
         data_sizes = [1000, 10000, 100000, 1000000]
         num_cpus = min(80, len(data_sizes)*len(seeds))
 

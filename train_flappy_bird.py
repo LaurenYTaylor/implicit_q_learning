@@ -52,11 +52,11 @@ if __name__ == "__main__":
         #config["eval_interval"] = 1000
         num_cpus = 1
     else:
-        seeds = list(range(20))
-        data_sizes = [f"datasets/flappy_heuristic_1000000.pkl", f"datasets/flappy_1000000.pkl"]
-        num_cpus = 40
+        seeds = list(range(5))
+        data_sizes = [f"datasets/flappy_heuristic_1000000.pkl"]
+        num_cpus = 10
 
-    algos = ["jsrlgs"]
+    algos = ["jsrl", "ft"]
 
     ray.init(num_cpus=num_cpus)
 
