@@ -105,10 +105,11 @@ def update_horizon(returns, horizon_idx, prev_best, tolerance=0.05, n=5):
         return horizon_idx, prev_best
     rolling_mean = np.mean(returns[-n:])
     if np.isinf(prev_best):
-        prev = prev_best
+        prev_best = rolling_mean
+        return horizon_idx, prev_best
     else:
         prev = prev_best - tolerance * prev_best
-    if rolling_mean > prev:
+    if rolling_mean >= prev:
         prev_best = rolling_mean
         return horizon_idx + 1, prev_best
     else:
@@ -194,11 +195,11 @@ def main(args=None):
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
+    eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
 
     try:
         action_dim = env.action_space.shape[0]
     except IndexError:
-        #action_dim = env.action_space.n
         action_dim = 1
 
     if args.algo == "ft":
@@ -207,7 +208,6 @@ def main(args=None):
         replay_buffer_online.initialize_with_dataset(dataset, args.init_dataset_size)
     else:
         replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, 100000)
-        #replay_buffer_online.initialize_with_dataset(dataset, 100000)
         replay_buffer_offline = ReplayBuffer(env.observation_space, action_dim, args.init_dataset_size)
         replay_buffer_offline.initialize_with_dataset(dataset, args.init_dataset_size)
 
@@ -221,18 +221,24 @@ def main(args=None):
         horizon_idx = 0
         eval_returns = []
 
+
+
     if args.load_model:
         steps = range(1, args.max_steps + 1)
         pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
                                    env.action_space.sample()[np.newaxis], **kwargs)
         dirs = glob.glob(args.load_model)
+        found = False
         for d in dirs:
-            if d.split("_", 1)[1] == config_str.split("_", 1)[1]:
-                pretrained_agent.actor = pretrained_agent.actor.load(args.load_model + f"/{d}/pretrained_actor")
-                pretrained_agent.critic = pretrained_agent.critic.load(args.load_model + f"/{d}/pretrained_critic")
-                pretrained_agent.value = pretrained_agent.value.load(args.load_model + f"/{d}/pretrained_value")
+            if "_".join(config_str.split("_", 5)[1:5]) in d:
+                pretrained_agent.actor = pretrained_agent.actor.load(args.load_model + "/pretrained_actor")
+                pretrained_agent.critic = pretrained_agent.critic.load(args.load_model + "/pretrained_critic")
+                pretrained_agent.value = pretrained_agent.value.load(args.load_model + "/pretrained_value")
                 pretrained_agent.target_critic = pretrained_agent.target_critic.load(
-                    args.load_model + f"/{d}/pretrained_target_critic")
+                    args.load_model + "/pretrained_target_critic")
+                found = True
+        assert found, "Pretrained model was not found."
+
     else:
         steps = range(1 - args.num_pretraining_steps,
                       args.max_steps + 1)
@@ -242,6 +248,7 @@ def main(args=None):
 
 
     # Use negative indices for pretraining steps.
+    goal_dists = []
     for i in tqdm.tqdm(steps, smoothing=0.1, disable=not args.tqdm):
         if i >= 1:
             if i == 1:
@@ -253,17 +260,18 @@ def main(args=None):
                     n_offline_samp = args.batch_size - n_online_samp
                     learning_agent = setup_learner(env, pretrained_agent, kwargs)
                     if "gs" in args.algo:
-                        horizon = np.max(evaluate(pretrained_agent, env, 100)['goal_dist'])
+                        ds = evaluate(pretrained_agent, eval_env, 100)['goal_dist']
+                        horizon = np.max(ds)
                         horizons = np.linspace(0, horizon, args.curriculum_stages)
                     else:
-                        horizon = evaluate(pretrained_agent, env, 100)['length']
+                        horizon = np.max(evaluate(pretrained_agent, eval_env, 100)['all_lens'])
                         horizons = np.linspace(horizon, 0, args.curriculum_stages)
-
                     save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
 
             if args.algo == "jsrlgs":
                 if "antmaze" in args.env_name:
                     h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
+                    goal_dists.append(h)
                 else:
                     h = np.abs(observation[1])
             elif args.algo == "jsrl":
@@ -272,12 +280,13 @@ def main(args=None):
             if args.algo == "jsrl" and h <= horizons[horizon_idx]:
                 action = pretrained_agent.sample_actions(observation, )
                 agent_type.append(0.0)
-            elif args.algo == "jsrlgs" and h >= horizons[horizon_idx]:
+            elif args.algo == "jsrlgs" and h >= horizons[horizon_idx] and h <= horizons[-1]:
                 action = pretrained_agent.sample_actions(observation, )
                 agent_type.append(0.0)
             else:
                 action = learning_agent.sample_actions(observation, )
                 agent_type.append(1.0)
+            #print(f"current: {h}, horizons: {horizons}, thresh: {horizons[horizon_idx]}, agent: {agent_type[-1]}, ts: {time_step}")
             if isinstance(env.action_space, gym.spaces.Box):
                 action = np.clip(action, -1, 1)
 
@@ -349,9 +358,9 @@ def main(args=None):
 
         if i % args.eval_interval == 0:
             if i < 1 or args.algo == "ft":
-                eval_stats = evaluate(agent, env, args.eval_episodes)
+                eval_stats = evaluate(agent, eval_env, args.eval_episodes)
             else:
-                eval_stats = evaluate_jsrl(agent, env, args.eval_episodes, pretrained_agent, horizons[horizon_idx], args.algo)
+                eval_stats = evaluate_jsrl(agent, eval_env, args.eval_episodes, pretrained_agent, horizons[horizon_idx], args.algo)
             for k, v in eval_stats.items():
                 if isinstance(v, list):
                     v = np.mean(v)
@@ -363,13 +372,21 @@ def main(args=None):
                        eval_returns,
                        fmt=['%d', '%.1f'])
             if args.algo != "ft" and i > 0:
+                summary_writer.add_scalar('training/horizon', horizon_idx, i)
                 if len(horizons) > 0 and horizon_idx != len(horizons) - 1:
                     horizon_idx, prev_best = update_horizon([e[1] for e in eval_returns], horizon_idx, prev_best,
                                                             tolerance=args.tolerance, n=args.n_prev_returns)
-                summary_writer.add_scalar('training/horizon', horizon_idx, i)
     summary_writer.close()
     save_model(learning_agent, args.save_dir + f"/model/{config_str}", type="final_")
 
+    import matplotlib.pyplot as plt
+    '''
+    y, x, _ = plt.hist(goal_dists)
+    plt.vlines(horizons, ymin=0, ymax=y.max())
+    plt.show()
+    '''
+    plt.plot([e[0] for e in eval_returns], [e[1] for e in eval_returns])
+    plt.show()
 
 if __name__ == "__main__":
     main()

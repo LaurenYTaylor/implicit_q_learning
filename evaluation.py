@@ -11,6 +11,7 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     all_dists = []
     all_lens = []
+    import time
     for _ in range(num_episodes):
         observation, done = env.reset(), False
         i = 0
@@ -19,11 +20,10 @@ def evaluate(agent: nn.Module, env: gym.Env,
                 if "antmaze" in env.unwrapped.spec.id:
                     dist = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
                 else:
-                    dist = np.abs(observation[1])
+                    dist = np.sqrt(observation[0]**2+observation[1]**2)
                 all_dists.append(dist)
             except AttributeError:
                 continue
-
             action = agent.sample_actions(observation, temperature=0.0)
             observation, _, done, info = env.step(action)
             all_lens.append(i)
@@ -34,6 +34,7 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     for k, v in stats.items():
         stats[k] = np.mean(v)
+
     stats['goal_dist'] = all_dists
     stats['all_lens'] = all_lens
     return stats
@@ -48,6 +49,7 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
         observation, done = env.reset(), False
         while not done:
             agent = learning_agent
+
             if algo == "jsrlgs":
                 if "antmaze" in env.unwrapped.spec.id:
                     h = np.linalg.norm(np.array(env.target_goal) - np.array(env.get_xy()))
@@ -76,6 +78,8 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
 
     for k, v in stats.items():
         stats[k] = np.mean(v)
+
     stats['agent_type'] = np.mean(agent_type)
+
     return stats
 

@@ -23,10 +23,10 @@ def polars_read(algos, eval_returns):
 
 if __name__ == "__main__":
     sns.set_theme(style="darkgrid")
-    folders = ["results/all_variants_results/jsrlgs/*.txt", "results/all_variants_results/ft/*.txt"]
+    folders = ["results/flappy/0/*s[01234]*flappy_heuristic*.txt", "results/flappy/1/*.txt","results/flappy/2/*.txt"]
 
     eval_returns = [glob.glob(folder) for folder in folders]
-    algos = ["JSRL-GS", "FT"]
+    algos = ["JSRL-GS", "JSRL", "FT"]
 
     assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
 

@@ -5,20 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/plotting/compare_tolerances.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/wrappers/expand_action_dim_wrapper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/percentile_experiments.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/actor.py" beforeDir="false" afterPath="$PROJECT_DIR$/actor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/learner.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/parallel_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/plotting/compare_tolerances.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_tolerances.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/policy.py" beforeDir="false" afterPath="$PROJECT_DIR$/policy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_flappy_bird.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_flappy_bird.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_flappy_bird.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_flappy_bird.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_online.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wrappers/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/wrappers/__init__.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,20 +33,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "//wsl$/Ubuntu/home/a1899783/anaconda3/envs/iql-env/lib/python3.9/site-packages/flappy_bird_gym/envs/game_logic.py",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "configurable.group.editor",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;//wsl$/Ubuntu/home/a1899783/anaconda3/envs/iql-env/lib/python3.9/site-packages/flappy_bird_gym/envs/game_logic.py&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.editor&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="U:\Code\implicit_q_learning" />
@@ -82,7 +78,8 @@
       <workItem from="1692242980973" duration="876000" />
       <workItem from="1692245578751" duration="4325000" />
       <workItem from="1692755352615" duration="40257000" />
-      <workItem from="1692920671781" duration="39501000" />
+      <workItem from="1692920671781" duration="63116000" />
+      <workItem from="1693963512610" duration="14321000" />
     </task>
     <servers />
   </component>

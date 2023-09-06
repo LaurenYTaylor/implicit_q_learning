@@ -8,7 +8,7 @@ def run_training(seed, n_data, algo, save_dir, config):
     config["seed"] = seed
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
-    #config["downloaded_dataset"] = f"datasets/antmaze_umaze_{n_data}.pkl"
+    config["downloaded_dataset"] = f"datasets/antmaze_umaze_{n_data}.pkl"
     config["algo"] = algo
     return main(config)
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000}
 
-    algos = ["jsrl", "jsrlgs"]
+    algos = ["jsrlgs"]
 
     if args.test:
         seeds = [0]
@@ -53,8 +53,8 @@ if __name__ == "__main__":
         #config["num_pretraining_steps"] = 80000
         #config["max_steps"] = 20000
         config["num_pretraining_steps"] = 100
-        config["max_steps"] = 100
-        config["eval_interval"] = 20
+        config["max_steps"] = 10000
+        config["eval_interval"] = 700
         num_cpus = 2
     else:
         seeds = list(range(20))
