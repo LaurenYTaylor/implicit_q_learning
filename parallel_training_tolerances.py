@@ -60,7 +60,7 @@ if __name__ == "__main__":
         config["num_pretraining_steps"] = 1000
         config["max_steps"] = 1000
         config["eval_interval"] = 100
-        num_cpus = 8
+        num_cpus = 1
     else:
         seeds = [0,1,2]
         data_sizes = [1000, 10000, 100000, 1000000]

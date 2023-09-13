@@ -105,8 +105,7 @@ def update_horizon(returns, horizon_idx, prev_best, tolerance=0.05, n=5):
         return horizon_idx, prev_best
     rolling_mean = np.mean(returns[-n:])
     if np.isinf(prev_best):
-        prev_best = rolling_mean
-        return horizon_idx, prev_best
+        prev = prev_best
     else:
         prev = prev_best - tolerance * prev_best
     if rolling_mean >= prev:
@@ -195,8 +194,8 @@ def main(args=None):
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-
+    #eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
+    eval_env = env
     try:
         action_dim = env.action_space.shape[0]
     except IndexError:
@@ -237,7 +236,8 @@ def main(args=None):
                 pretrained_agent.target_critic = pretrained_agent.target_critic.load(
                     args.load_model + "/pretrained_target_critic")
                 found = True
-        assert found, "Pretrained model was not found."
+        assert found, f"Pretrained model was not found. Possibly because " \
+                      f"the config string {'_'.join(config_str.split('_', 5)[1:5])} is not in dir name {d}."
 
     else:
         steps = range(1 - args.num_pretraining_steps,
@@ -245,7 +245,6 @@ def main(args=None):
 
         pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
                                    env.action_space.sample()[np.newaxis], **kwargs)
-
 
     # Use negative indices for pretraining steps.
     goal_dists = []
@@ -255,17 +254,23 @@ def main(args=None):
                 if args.algo == "ft":
                     learning_agent = pretrained_agent
                 else:
-                    prev_best = -np.inf
                     n_online_samp = int(0.75 * args.batch_size)
                     n_offline_samp = args.batch_size - n_online_samp
                     learning_agent = setup_learner(env, pretrained_agent, kwargs)
+                    pretrained_stats = evaluate(pretrained_agent, eval_env, 100)
+                    prev_best = pretrained_stats['return']
                     if "gs" in args.algo:
-                        ds = evaluate(pretrained_agent, eval_env, 100)['goal_dist']
-                        horizon = np.max(ds)
-                        horizons = np.linspace(0, horizon, args.curriculum_stages)
+                        horizon = np.max(pretrained_stats['goal_dist'])
+                        #percentiles = [0]*args.curriculum_stages
+                        percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
+                        #horizons = np.linspace(0, horizon, args.curriculum_stages)
+                        horizons = percentiles
+                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
+                        #at_thresholds = [10]*args.curriculum_stages
                     else:
-                        horizon = np.max(evaluate(pretrained_agent, eval_env, 100)['all_lens'])
+                        horizon = np.mean(pretrained_stats['all_lens'])
                         horizons = np.linspace(horizon, 0, args.curriculum_stages)
+                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
                     save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
 
             if args.algo == "jsrlgs":
@@ -277,10 +282,10 @@ def main(args=None):
             elif args.algo == "jsrl":
                 h = time_step
 
-            if args.algo == "jsrl" and h <= horizons[horizon_idx]:
+            if args.algo == "jsrl" and (np.mean(agent_type)>at_thresholds[horizon_idx] or h <= horizons[horizon_idx]):
                 action = pretrained_agent.sample_actions(observation, )
                 agent_type.append(0.0)
-            elif args.algo == "jsrlgs" and h >= horizons[horizon_idx] and h <= horizons[-1]:
+            elif args.algo == "jsrlgs" and (np.mean(agent_type)>at_thresholds[horizon_idx] or (h >= horizons[horizon_idx] and h <= horizons[-1])):
                 action = pretrained_agent.sample_actions(observation, )
                 agent_type.append(0.0)
             else:
@@ -302,7 +307,6 @@ def main(args=None):
             observation = next_observation
 
             if done:
-                #it, count = np.unique(agent_type, return_counts=True)
                 observation, done = env.reset(), False
                 time_step = 0
                 for k, v in info['episode'].items():
@@ -310,7 +314,9 @@ def main(args=None):
                                               info['total']['timesteps'])
                 if args.algo != "ft":
                     summary_writer.add_scalar('training/agent_type', np.mean(agent_type), i)
+                    #print(f"training: {np.mean(agent_type)}, {info['episode']['return']}, {horizon_idx}, {horizons[horizon_idx]}, {horizons[-1]}, {at_thresholds[horizon_idx]}")
                     agent_type = []
+
                 summary_writer.flush()
             else:
                 time_step += 1
@@ -318,35 +324,30 @@ def main(args=None):
             info = {}
             info['total'] = {'timesteps': i}
 
-        if args.algo == "ft":
-            batch = replay_buffer_online.sample(args.batch_size)
-        else:
-            if i < 1:
+
+        if i < 1:
+            if args.algo == "ft":
+                batch = replay_buffer_online.sample(args.batch_size)
+            else:
                 batch = replay_buffer_offline.sample(args.batch_size)
+            update_info = pretrained_agent.update(batch)
+        elif args.algo == "ft" or i >= (n_online_samp+1):
+            # don't update until there's a batch size of online data in buffer
+            # 0.75*batch size because jsrl takes 75% of batch from online buffer and 25% from offline
+            if args.algo == "ft":
+                batch = replay_buffer_online.sample(args.batch_size)
             else:
                 online_batch = replay_buffer_online.sample_fifo(n_online_samp)
                 offline_batch = replay_buffer_offline.sample(n_offline_samp)
                 batch = {}
                 for k in online_batch._asdict().keys():
-                    batch[k] = np.concatenate((online_batch._asdict()[k], offline_batch._asdict()[k]))
+                    if k == "rewards" and "antmaze" in args.env_name:
+                        online_v = online_batch._asdict()[k]-1
+                    else:
+                        online_v = online_batch._asdict()[k]
+                    batch[k] = np.concatenate((online_v, offline_batch._asdict()[k]))
                 batch = Batch(**batch)
-
-        if 'antmaze' in args.env_name:
-            batch = Batch(observations=batch.observations,
-                          actions=batch.actions,
-                          rewards=batch.rewards - 1,
-                          masks=batch.masks,
-                          next_observations=batch.next_observations)
-
-        if i >= 1:
-            agent = learning_agent
-        else:
-            agent = pretrained_agent
-
-        # don't update until there's a batch size of online data in buffer
-        # 0.75*batch size because jsrl takes 75% of batch from online buffer and 25% from offline
-        if i < 1 or i >= int(0.75*args.batch_size)+1:
-            update_info = agent.update(batch)
+            update_info = learning_agent.update(batch)
 
         if i % args.log_interval == 0:
             for k, v in update_info.items():
@@ -358,9 +359,10 @@ def main(args=None):
 
         if i % args.eval_interval == 0:
             if i < 1 or args.algo == "ft":
-                eval_stats = evaluate(agent, eval_env, args.eval_episodes)
+                eval_stats = evaluate(pretrained_agent, eval_env, args.eval_episodes)
             else:
-                eval_stats = evaluate_jsrl(agent, eval_env, args.eval_episodes, pretrained_agent, horizons[horizon_idx], args.algo)
+                eval_stats = evaluate_jsrl(learning_agent, eval_env, args.eval_episodes,
+                                           pretrained_agent, horizons[horizon_idx], args.algo, horizons[-1], at_thresholds[horizon_idx])
             for k, v in eval_stats.items():
                 if isinstance(v, list):
                     v = np.mean(v)
@@ -368,6 +370,11 @@ def main(args=None):
             summary_writer.flush()
 
             eval_returns.append((i, eval_stats['return']))
+            if i<1:
+                at = 0
+            else:
+                at = eval_stats['agent_type']
+            #print(f"{at}: {eval_returns[-1]}")
             np.savetxt(os.path.join(args.save_dir, config_str+".txt"),
                        eval_returns,
                        fmt=['%d', '%.1f'])
@@ -379,14 +386,18 @@ def main(args=None):
     summary_writer.close()
     save_model(learning_agent, args.save_dir + f"/model/{config_str}", type="final_")
 
-    import matplotlib.pyplot as plt
     '''
+    import matplotlib.pyplot as plt
+    
     y, x, _ = plt.hist(goal_dists)
     plt.vlines(horizons, ymin=0, ymax=y.max())
     plt.show()
-    '''
+    
     plt.plot([e[0] for e in eval_returns], [e[1] for e in eval_returns])
+    plt.ylabel("Returns")
+    plt.xlabel("Online Training Step")
     plt.show()
+    '''
 
 if __name__ == "__main__":
     main()
