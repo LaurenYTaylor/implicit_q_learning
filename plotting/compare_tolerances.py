@@ -29,7 +29,7 @@ if __name__ == "__main__":
                          "t0-1_nd1", "t0-1_nd5", "t0-1_nd10"]
 
     for t in tolerance_options:
-        folders = [f"results/tolerances/jsrlgs/*_s0_*{t}.txt", f"results/tolerances/jsrl/*_s0_*{t}.txt"]
+        folders = [f"results/tolerances_2/jsrlgs/*{t}_antmaze*.txt", f"results/tolerances_2/jsrl/*{t}_antmaze*.txt"]
 
         eval_returns = [glob.glob(folder) for folder in folders]
         algos = ["JSRL-GS", "JSRL"]
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
         print("Plots made. Saving plots...")
         plt.tight_layout()
-        plt.savefig(f"results/tolerances/{t}.png")
+        plt.savefig(f"results/tolerances_2/{t}.png")
         print(t)
         #plt.show()
         plt.close()

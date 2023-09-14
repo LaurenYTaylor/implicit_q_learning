@@ -1,5 +1,4 @@
 """Implementations of algorithms for continuous control."""
-
 from typing import Optional, Sequence, Tuple
 
 import jax
