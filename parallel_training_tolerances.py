@@ -62,9 +62,10 @@ if __name__ == "__main__":
         config["eval_interval"] = 100
         num_cpus = 1
     else:
-        seeds = [0,1,2]
-        data_sizes = [1000, 10000, 100000, 1000000]
-        num_cpus = 72
+        seeds = [0]
+        #data_sizes = [1000, 10000, 100000, 1000000]
+        data_sizes = [1000000, 1000]
+        num_cpus = 36
     ray.init(num_cpus=num_cpus)
 
     algos = ["jsrl", "jsrlgs"]
