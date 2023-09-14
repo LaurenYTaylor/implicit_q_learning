@@ -150,8 +150,11 @@ cython_debug/
 logs/
 test_logs/
 plotting/plots
+saved_models
+results
 datasets
 sb3_logs
+completed_results
 datasets.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/

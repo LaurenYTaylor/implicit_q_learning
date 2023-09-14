@@ -12,7 +12,7 @@ def run_training(seed, n_data, save_dir, config):
 
 
 def run(seeds, data_sizes, config):
-    if config["max_steps"] <= 100:
+    if config["max_steps"] <= 1000:
         test = True
     else:
         test = False
@@ -32,28 +32,13 @@ def run(seeds, data_sizes, config):
 
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--test", action="store_true")
-    args = parser.parse_args()
-
-    config = {"env_name": "antmaze-umaze-v0",
-              "num_pretraining_steps": 1000000,
-              "max_steps": 1000000,
-              "algo": "jsrlgs"}
-
-    if args.test:
-        seeds = [0]
+    ray.init(num_cpus=1)
+    for algo in ["ft", "jsrl", "jsrlgs"]:
+        config = {"env_name": "antmaze-umaze-v0",
+	          "num_pretraining_steps": 1000,
+	          "max_steps": 1000,
+                  "eval_interval": 700,
+	          "algo": algo}
+       	seeds = [0]
         data_sizes = [1000]
-        config["num_pretraining_steps"] = 100
-        config["max_steps"] = 100
-        config["eval_interval"] = 700
-        num_cpus = 1
-    else:
-        seeds = list(range(20))
-        data_sizes = [1000, 10000, 100000, 1000000]
-        num_cpus = min(80, len(data_sizes)*len(seeds))
-
-    ray.init(num_cpus=num_cpus)
-
-    run(seeds, data_sizes, config)
+        run(seeds, data_sizes, config)
