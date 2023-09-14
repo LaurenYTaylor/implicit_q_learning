@@ -2,6 +2,7 @@
 logs/
 test_logs/
 plotting/plots
+results
 datasets
 sb3_logs
 datasets.zip
