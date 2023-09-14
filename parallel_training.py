@@ -55,7 +55,7 @@ if __name__ == "__main__":
         config["num_pretraining_steps"] = 100
         config["max_steps"] = 10000
         config["eval_interval"] = 700
-        num_cpus = 2
+        num_cpus = 1
     else:
         seeds = list(range(20))
         data_sizes = [1000, 10000, 100000, 1000000]

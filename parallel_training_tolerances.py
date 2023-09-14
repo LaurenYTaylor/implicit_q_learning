@@ -1,3 +1,7 @@
+import os
+os.environ["XLA_FLAGS"] = ("--xla_cpu_multi_thread_eigen=false "
+                           "intra_op_parallelism_threads=1")
+
 import ray
 from train_online import main, make_save_dir
 from memory_profiler import profile
@@ -56,10 +60,11 @@ if __name__ == "__main__":
         config["num_pretraining_steps"] = 1000
         config["max_steps"] = 1000
         config["eval_interval"] = 100
-        num_cpus = 8
+        num_cpus = 1
     else:
         seeds = [0]
-        data_sizes = [1000, 1000000]
+        #data_sizes = [1000, 10000, 100000, 1000000]
+        data_sizes = [1000000, 1000]
         num_cpus = 36
     ray.init(num_cpus=num_cpus)
 

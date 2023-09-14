@@ -23,10 +23,11 @@ def polars_read(algos, eval_returns):
 
 if __name__ == "__main__":
     sns.set_theme(style="darkgrid")
-    folders = ["results/flappy/0/*s[01234]*flappy_heuristic*.txt", "results/flappy/1/*.txt","results/flappy/2/*.txt"]
+    folders = ["results/flappy2/FlappyBird-v0_0_ft_ft/*.txt", "results/flappy2/FlappyBird-v0_1_jsrl_ft/*.txt",
+               "results/flappy2/FlappyBird-v0_2_jsrlgs_ft/*.txt"]
 
     eval_returns = [glob.glob(folder) for folder in folders]
-    algos = ["JSRL-GS", "JSRL", "FT"]
+    algos = ["FT", "JSRL", "JSRL-GS"]
 
     assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
 
@@ -44,5 +45,5 @@ if __name__ == "__main__":
     ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
     ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
     print("Plots made. Saving plots...")
-    #plt.savefig("plotting/plots/wtf.png")
+    plt.savefig(f"results/flappy2/res.png")
     plt.show()
