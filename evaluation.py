@@ -77,7 +77,7 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
             pos_applied[tuple(env.get_xy())] = ["red", "blue"][int(agent_type[-1])]
             observation, _, done, info = env.step(action)
             time_step += 1
-        '''
+
         if ne<5:
             from matplotlib import pyplot as plt
             #plt.scatter(timesteps_applied.keys(), timesteps_applied.values())
@@ -99,7 +99,7 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
 
 
             plt.show()
-        '''
+
 
         for k in stats.keys():
             if k != 'agent_type':

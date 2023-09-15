@@ -42,6 +42,7 @@ PARSER.add_argument('--warm_start', default=False, action="store_true", help='Wa
 PARSER.add_argument('--tolerance', default=0.05, help="return improvement +\- for moving to next curriculum stage.")
 PARSER.add_argument('--n_prev_returns', default=5, help='N previous returns to use to determine improvement.'
                                                                              'value function.')
+PARSER.add_argument('--at_thresholds', default=False, help='Use agent type thresholds.')
 PARSER.add_argument('--curriculum_stages', default=10, help='Curriculum stages.')
 PARSER.add_argument('--algo', default="ft", help='Algorithm.', choices=["ft", "jsrl", "jsrlgs"])
 
@@ -259,18 +260,17 @@ def main(args=None):
                     learning_agent = setup_learner(env, pretrained_agent, kwargs)
                     pretrained_stats = evaluate(pretrained_agent, eval_env, 100)
                     prev_best = pretrained_stats['return']
+                    if args.at_thresholds:
+                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
+                    else:
+                        at_thresholds = [np.inf]*args.curriculum_stages
                     if "gs" in args.algo:
                         horizon = np.max(pretrained_stats['goal_dist'])
-                        #percentiles = [0]*args.curriculum_stages
-                        percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
-                        #horizons = np.linspace(0, horizon, args.curriculum_stages)
-                        horizons = percentiles
-                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
-                        #at_thresholds = [10]*args.curriculum_stages
+                        #percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
+                        horizons = np.linspace(0, horizon, args.curriculum_stages)
                     else:
                         horizon = np.mean(pretrained_stats['all_lens'])
                         horizons = np.linspace(horizon, 0, args.curriculum_stages)
-                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
                     save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
 
             if args.algo == "jsrlgs":
