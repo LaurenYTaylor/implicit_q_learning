@@ -4,6 +4,7 @@ import time
 import pickle
 import argparse
 from configs.training_configs import get_config
+import json
 
 import gym
 import flappy_bird_gym
@@ -213,6 +214,9 @@ def main(args=None):
 
     kwargs = vars(args)
 
+    with open(args.save_dir+"/args.txt", "w") as f:
+        json.dump(kwargs, f)
+
     eval_returns = []
     agent_type = []
     observation, done = env.reset(), False
@@ -220,8 +224,7 @@ def main(args=None):
     if args.algo != "ft":
         horizon_idx = 0
         eval_returns = []
-
-
+        agent_types = []
 
     if args.load_model:
         steps = range(1, args.max_steps + 1)
@@ -358,8 +361,10 @@ def main(args=None):
             summary_writer.flush()
 
         if i % args.eval_interval == 0:
-            if i < 1 or args.algo == "ft":
+            if i < 1:
                 eval_stats = evaluate(pretrained_agent, eval_env, args.eval_episodes)
+            elif args.algo == "ft":
+                eval_stats = evaluate(learning_agent, eval_env, args.eval_episodes)
             else:
                 eval_stats = evaluate_jsrl(learning_agent, eval_env, args.eval_episodes,
                                            pretrained_agent, horizons[horizon_idx], args.algo, horizons[-1], at_thresholds[horizon_idx])
@@ -379,6 +384,10 @@ def main(args=None):
                        eval_returns,
                        fmt=['%d', '%.1f'])
             if args.algo != "ft" and i > 0:
+                agent_types.append((i, eval_stats['agent_type']))
+                np.savetxt(os.path.join(args.save_dir, config_str + "agent_types.txt"),
+                           agent_types,
+                           fmt=['%d', '%.3f'])
                 summary_writer.add_scalar('training/horizon', horizon_idx, i)
                 if len(horizons) > 0 and horizon_idx != len(horizons) - 1:
                     horizon_idx, prev_best = update_horizon([e[1] for e in eval_returns], horizon_idx, prev_best,

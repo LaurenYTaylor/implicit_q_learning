@@ -23,10 +23,14 @@ def polars_read(algos, eval_returns):
 
 if __name__ == "__main__":
     sns.set_theme(style="darkgrid")
-    folders = ["results/flappy2/FlappyBird-v0_0_ft_ft/*.txt", "results/flappy2/FlappyBird-v0_1_jsrl_ft/*.txt",
-               "results/flappy2/FlappyBird-v0_2_jsrlgs_ft/*.txt"]
+    folder_stub = "results/flappy_at"
+    extra_spec = "_t0-1_nd10_"
+    extra_spec = ""
+    folders = [f"{folder_stub}/ft/*"+extra_spec+"*.txt", f"{folder_stub}/jsrl/*"+extra_spec+"*.txt",
+               f"{folder_stub}/jsrlgs/*"+extra_spec+"*.txt"]
 
     eval_returns = [glob.glob(folder) for folder in folders]
+    print(eval_returns)
     algos = ["FT", "JSRL", "JSRL-GS"]
 
     assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
@@ -45,5 +49,5 @@ if __name__ == "__main__":
     ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
     ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
     print("Plots made. Saving plots...")
-    plt.savefig(f"results/flappy2/res.png")
+    plt.savefig(f"{folder_stub}/res{extra_spec}.png")
     plt.show()

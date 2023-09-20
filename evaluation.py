@@ -11,7 +11,6 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     all_dists = []
     all_lens = []
-    import time
     for _ in range(num_episodes):
         observation, done = env.reset(), False
         i = 0
@@ -77,7 +76,7 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
             pos_applied[tuple(env.get_xy())] = ["red", "blue"][int(agent_type[-1])]
             observation, _, done, info = env.step(action)
             time_step += 1
-
+        '''
         if ne<5:
             from matplotlib import pyplot as plt
             #plt.scatter(timesteps_applied.keys(), timesteps_applied.values())
@@ -100,12 +99,12 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
 
             plt.show()
 
-
+        '''
         for k in stats.keys():
             if k != 'agent_type':
                 stats[k].append(info['episode'][k])
 
-        #print(f"eval: {info['episode']}, at: {np.mean(agent_type)}, {horizon}, {final_horizon}")
+        print(f"eval: {info['episode']}, at: {np.mean(agent_type)}, {horizon}, {final_horizon}")
         stats['agent_type'].append(np.mean(agent_type))
 
 
