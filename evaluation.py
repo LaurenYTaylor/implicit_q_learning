@@ -47,8 +47,8 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
 
 
     for ne in range(num_episodes):
-        timesteps_applied = {}
-        pos_applied = {}
+        #timesteps_applied = {}
+        #pos_applied = {}
         time_step = 0
         agent_type = []
         observation, done = env.reset(), False
@@ -73,10 +73,11 @@ def evaluate_jsrl(learning_agent: nn.Module, env: gym.Env,
                     action = learning_agent.sample_actions(observation, temperature=0.0)
                     agent_type.append(1.0)
 
-            timesteps_applied[time_step] = agent_type[-1]
-            pos_applied[tuple(env.get_xy())] = ["red", "blue"][int(agent_type[-1])]
+            #timesteps_applied[time_step] = agent_type[-1]
+            #pos_applied[tuple(env.get_xy())] = ["red", "blue"][int(agent_type[-1])]
             observation, _, done, info = env.step(action)
             time_step += 1
+
 
         if ne<5:
             from matplotlib import pyplot as plt

@@ -13,7 +13,7 @@ config = {"env_name": env_name,
             "tolerance": 0,
             "n_prev_returns": 1,
             "curriculum_stages": 10,
-            "at_thresholds": True,
+            "at_thresholds": False,
             "downloaded_dataset": f"datasets/antmaze_umaze_{1000000}.pkl",
             "save_dir": save_dir}
 main(config)

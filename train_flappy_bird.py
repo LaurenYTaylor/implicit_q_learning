@@ -42,7 +42,8 @@ if __name__ == "__main__":
 
     config = {"env_name": "FlappyBird-v0",
               "num_pretraining_steps": 1000000,
-              "max_steps": 1000000}
+              "max_steps": 1000000,
+              "at_thresholds": True}
 
     if args.test:
         seeds = [0]

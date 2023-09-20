@@ -19,6 +19,7 @@ from dataset_utils import (Batch, D4RLDataset, Dataset, ReplayBuffer,
                            split_into_trajectories)
 from evaluation import evaluate, evaluate_jsrl
 from learner import Learner
+from agent import IQLAgent, JSRLAgent, JSRLGSAgent
 
 PARSER = argparse.ArgumentParser(prog="IQL Trainer")
 PARSER.add_argument('--env_name', default='halfcheetah-expert-v2', help='Environment name.')
@@ -150,23 +151,10 @@ def make_save_dir(load_model, env_name, algo, test=False):
     return save_dir
 
 
-def setup_learner(env, pretrained_agent, kwargs):
-    learning_agent = Learner(env.observation_space.sample()[np.newaxis],
-                             env.action_space.sample()[np.newaxis], **kwargs)
-    if kwargs["warm_start"]:
-        learning_agent.actor = learning_agent.actor.replace(params=pretrained_agent.actor.params)
-        learning_agent.critic = learning_agent.critic.replace(params=pretrained_agent.critic.params)
-        learning_agent.value = learning_agent.value.replace(params=pretrained_agent.value.params)
-        learning_agent.target_critic = \
-            learning_agent.target_critic.replace(params=pretrained_agent.target_critic.params)
-    return learning_agent
 
 
-def save_model(agent, save_dir, type=""):
-    agent.actor.save(f"{save_dir}/" + type + "actor")
-    agent.critic.save(f"{save_dir}/" + type + "critic")
-    agent.target_critic.save(f"{save_dir}/" + type + "target_critic")
-    agent.value.save(f"{save_dir}/" + type + "value")
+
+
 
 
 def main(args=None):
@@ -197,21 +185,24 @@ def main(args=None):
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
     #eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
     eval_env = env
+
     try:
         action_dim = env.action_space.shape[0]
     except IndexError:
         action_dim = 1
 
-    if args.algo == "ft":
-        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim,
-                                            max(args.max_steps, args.init_dataset_size))
-        replay_buffer_online.initialize_with_dataset(dataset, args.init_dataset_size)
-    else:
-        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, 100000)
-        replay_buffer_offline = ReplayBuffer(env.observation_space, action_dim, args.init_dataset_size)
-        replay_buffer_offline.initialize_with_dataset(dataset, args.init_dataset_size)
-
     kwargs = vars(args)
+
+    if args.algo == "ft":
+        agent = IQLAgent(kwargs)
+    elif args.algo == "jsrl":
+        agent = JSRLAgent(kwargs)
+    elif args.algo == "jsrlgs":
+        agent = JSRLGSAgent(kwargs)
+
+    agent.make_replay_buffers(env.observation_space, action_dim, dataset)
+
+
 
     eval_returns = []
     agent_type = []
@@ -221,57 +212,14 @@ def main(args=None):
         horizon_idx = 0
         eval_returns = []
 
-
-
-    if args.load_model:
-        steps = range(1, args.max_steps + 1)
-        pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
-                                   env.action_space.sample()[np.newaxis], **kwargs)
-        dirs = glob.glob(args.load_model)
-        found = False
-        for d in dirs:
-            if "_".join(config_str.split("_", 5)[1:5]) in d:
-                pretrained_agent.actor = pretrained_agent.actor.load(args.load_model + "/pretrained_actor")
-                pretrained_agent.critic = pretrained_agent.critic.load(args.load_model + "/pretrained_critic")
-                pretrained_agent.value = pretrained_agent.value.load(args.load_model + "/pretrained_value")
-                pretrained_agent.target_critic = pretrained_agent.target_critic.load(
-                    args.load_model + "/pretrained_target_critic")
-                found = True
-        assert found, f"Pretrained model was not found. Possibly because " \
-                      f"the config string {'_'.join(config_str.split('_', 5)[1:5])} is not in dir name {d}."
-
-    else:
-        steps = range(1 - args.num_pretraining_steps,
-                      args.max_steps + 1)
-
-        pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
-                                   env.action_space.sample()[np.newaxis], **kwargs)
+    num_steps = agent.make_offline_learner(config_str)
 
     # Use negative indices for pretraining steps.
     goal_dists = []
-    for i in tqdm.tqdm(steps, smoothing=0.1, disable=not args.tqdm):
+    for i in tqdm.tqdm(num_steps, smoothing=0.1, disable=not args.tqdm):
         if i >= 1:
             if i == 1:
-                if args.algo == "ft":
-                    learning_agent = pretrained_agent
-                else:
-                    n_online_samp = int(0.75 * args.batch_size)
-                    n_offline_samp = args.batch_size - n_online_samp
-                    learning_agent = setup_learner(env, pretrained_agent, kwargs)
-                    pretrained_stats = evaluate(pretrained_agent, eval_env, 100)
-                    prev_best = pretrained_stats['return']
-                    if args.at_thresholds:
-                        at_thresholds = np.linspace(0, 1, args.curriculum_stages)
-                    else:
-                        at_thresholds = [np.inf]*args.curriculum_stages
-                    if "gs" in args.algo:
-                        horizon = np.max(pretrained_stats['goal_dist'])
-                        #percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
-                        horizons = np.linspace(0, horizon, args.curriculum_stages)
-                    else:
-                        horizon = np.mean(pretrained_stats['all_lens'])
-                        horizons = np.linspace(horizon, 0, args.curriculum_stages)
-                    save_model(pretrained_agent, args.save_dir + f"/model/{config_str}", type="pretrained_")
+                agent.go_online()
 
             if args.algo == "jsrlgs":
                 if "antmaze" in args.env_name:
@@ -370,11 +318,7 @@ def main(args=None):
             summary_writer.flush()
 
             eval_returns.append((i, eval_stats['return']))
-            if i<1:
-                at = 0
-            else:
-                at = eval_stats['agent_type']
-            #print(f"{at}: {eval_returns[-1]}")
+
             np.savetxt(os.path.join(args.save_dir, config_str+".txt"),
                        eval_returns,
                        fmt=['%d', '%.1f'])
