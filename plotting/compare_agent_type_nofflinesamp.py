@@ -115,8 +115,8 @@ if __name__ == "__main__":
 
         print("Plots made. Saving plots...")
         plt.tight_layout()
-        #plt.savefig(f"results/{folder_stub}/{t}_agent_type_compare_atonly.png")
-        #plt.savefig(f"results/{folder_stub_noat}/{t}_agent_type_curriculum_10000.svg", format="svg", dpi=300, bbox_inches='tight')
+        #plt.savefig(f"results/{folder_stub}/{t}_noffline.png")
+        #plt.savefig(f"results/{folder_stub_noat}/{t}_noffline.svg", format="svg", dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
 
