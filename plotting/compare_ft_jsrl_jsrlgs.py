@@ -51,5 +51,5 @@ if __name__ == "__main__":
         ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
         ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
         print("Plots made. Saving plots...")
-        #plt.savefig(f"{folder_stub}/res{extra_spec}.png")
+        plt.savefig(f"{folder_stub}/res{extra_spec}.png")
         plt.show()
