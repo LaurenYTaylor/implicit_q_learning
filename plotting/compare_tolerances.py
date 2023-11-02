@@ -15,9 +15,13 @@ def polars_read(algos, eval_returns):
 
             seed = int(re.search("_s([0-9]+)", ret).group(1))
             data_size = int(re.search("_d([0-9]+)", ret).group(1))
+            tolerance = re.search("_t([0-9\-]+)_", ret).group(1)
+            tolerance = float(tolerance.replace("-", "."))
+            n_returns = int(re.search("_nd([0-9]+)_", ret).group(1))
             data = data.with_columns([pl.Series([algo]*len(data)).alias("Algo"),
                                      pl.Series([seed]*len(data)).alias("Seed"),
-                                     pl.Series([data_size]*len(data)).alias("N data")])
+                                     pl.Series([data_size]*len(data)).alias("N data"),
+                                     pl.Series([f"{tolerance}/{n_returns}"]*len(data)).alias("Tolerance/N returns")])
             datas.append(data)
     return pl.concat(datas)
 
@@ -27,38 +31,42 @@ if __name__ == "__main__":
     tolerance_options = ["t0_nd1", "t0_nd5", "t0_nd10",
                          "t0-05_nd1", "t0-05_nd5", "t0-05_nd10",
                          "t0-1_nd1", "t0-1_nd5", "t0-1_nd10"]
+    file_stub = "tolerances_noat_31023"
+    #for t in tolerance_options:
+    #folders = [f"results/tolerances_at_31023/jsrlgs/*{t}_antmaze*.txt", f"results/tolerances_at_31023/jsrl/*{t}_antmaze*.txt"]
+    folders = [f"results/{file_stub}/jsrl/*_antmaze*.txt"]
 
-    for t in tolerance_options:
-        folders = [f"results/tolerances_2/jsrlgs/*{t}_antmaze*.txt", f"results/tolerances_2/jsrl/*{t}_antmaze*.txt"]
+    eval_returns = [glob.glob(folder) for folder in folders]
+    #algos = ["JSRL-GS", "JSRL"]
+    algos = ["JSRL"]
+    assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
+    print("Loading data...")
+    try:
+        all_data = polars_read(algos, eval_returns)
+    except ValueError:
+        print(f"Folders in {folders} are empty or do not exist.")
+        exit()
+    print("Data loaded. Making plots..")
 
-        eval_returns = [glob.glob(folder) for folder in folders]
-        algos = ["JSRL-GS", "JSRL"]
+    datas = []
+    for d in all_data.partition_by("N data", "Algo"):
+        d = d.with_columns(d["Return"].ewm_mean(alpha=0.1))
+        datas.append(d)
+    all_data = pl.concat(datas)
 
-        assert len(algos) == len(folders), f"Num folders {len(folders)} != num algorithm names {len(algos)}"
-        print("Loading data...")
-        try:
-            all_data = polars_read(algos, eval_returns)
-        except ValueError:
-            print(f"Folders in {folders} are empty or do not exist.")
-            exit()
-        print("Data loaded. Making plots..")
+    ax = sns.lineplot(x="Time Step", y="Return", hue="Tolerance/N returns",
+                        style="N data", data=all_data)
 
-        datas = []
-        for d in all_data.partition_by("N data", "Algo"):
-            d = d.with_columns(d["Return"].ewm_mean(alpha=0.5))
-            datas.append(d)
-        all_data = pl.concat(datas)
 
-        ax = sns.lineplot(x="Time Step", y="Return", hue="Algo",
-                            style="N data", data=all_data)
-        ax.axvline(0, color="grey", linestyle="dashed", alpha=0.8)
-        ax.text(-0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Offline Training", ha='center', size=10)
-        ax.text(0.5e6, all_data["Return"].mean()+2*all_data["Return"].std(), "Online Fine Tuning", ha='center', size=10)
-        print("Plots made. Saving plots...")
-        plt.tight_layout()
-        plt.savefig(f"results/tolerances_2/{t}.png")
-        print(t)
-        #plt.show()
-        plt.close()
-        #break
+    #print(t)
+    ax.axvline(0, color="grey", linestyle="dashed", alpha=0.8)
+    ax.text(0.25, 1, "Offline Training", ha='center', va='bottom', size=10, transform=ax.transAxes)
+    ax.text(0.75, 1, "Online Fine Tuning", ha='center', va='bottom', size=10, transform=ax.transAxes)
+    print("Plots made. Saving plots...")
+    ax.legend(loc='lower right', ncol=2, labelspacing=0.1)
+    plt.tight_layout()
+    plt.savefig(f"results/{file_stub}/tolerance-nreturns-jsrl.png")
+    plt.show()
+    plt.close()
+    #break
 

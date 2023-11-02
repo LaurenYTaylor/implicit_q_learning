@@ -12,11 +12,7 @@ def run_training(seed, n_data, algo, save_dir, config):
     return main(config)
 
 
-def run(seeds, data_sizes, algos, config):
-    if config["max_steps"] <= 100:
-        test = True
-    else:
-        test = False
+def run(seeds, data_sizes, algos, config, test=False):
     save_dirs = []
     for algo in algos:
         save_dirs.append(make_save_dir(False, config["env_name"], algo, test=test))
@@ -24,6 +20,7 @@ def run(seeds, data_sizes, algos, config):
         run_training.remote(seed, data_size, algo, save_dirs[i], config) for i, algo in enumerate(algos) for seed in
         seeds for data_size in data_sizes
     ]
+
 
     all_data = []
     while len(object_references) > 0:
@@ -42,23 +39,24 @@ if __name__ == "__main__":
 
     config = {"env_name": "FlappyBird-v0",
               "num_pretraining_steps": 1000000,
-              "max_steps": 1000000}
+              "max_steps": 1000000,
+              "at_thresholds": True}
+              #"load_model": "saved_models/jsrl/*"}
 
     if args.test:
         seeds = [0]
-        data_sizes = [f"datasets/flappy_heuristic_1000000.pkl"]
-        config["num_pretraining_steps"] = 1000
+        data_sizes = [f"datasets/flappy_ppo_1000000.pkl"]
+        config["num_pretraining_steps"] = 1000000
         config["max_steps"] = 10000
-        config["eval_interval"] = 250
-        num_cpus = 1
+        config["eval_interval"] = 1000
     else:
         seeds = list(range(5))
-        data_sizes = [f"datasets/flappy_heuristic_1000000.pkl"]
-        num_cpus = 15
+        data_sizes = [f"datasets/flappy_ppo_1000000.pkl"]
 
-    algos = ["ft", "jsrl", "jsrlgs"]
+    algos = ["jsrl"]
     #algos = ["jsrlgs"]
 
+    num_cpus = len(seeds)
     ray.init(num_cpus=num_cpus)
 
-    run(seeds, data_sizes, algos, config)
+    run(seeds, data_sizes, algos, config, args.test)

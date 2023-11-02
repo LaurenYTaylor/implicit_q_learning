@@ -11,11 +11,7 @@ def run_training(seed, n_data, save_dir, config):
     return main(config)
 
 
-def run(seeds, data_sizes, config):
-    if config["max_steps"] <= 100:
-        test = True
-    else:
-        test = False
+def run(seeds, data_sizes, config, test=False):
     save_dir = make_save_dir(False, "antmaze-umaze-v0", config["algo"], test=test)
     object_references = [
         run_training.remote(seed, data_size, save_dir, config)
@@ -44,10 +40,10 @@ if __name__ == "__main__":
 
     if args.test:
         seeds = [0]
-        data_sizes = [1000]
-        config["num_pretraining_steps"] = 100
-        config["max_steps"] = 100
-        config["eval_interval"] = 700
+        data_sizes = [1000000]
+        config["max_steps"] = 1000
+        config["num_pretraining_steps"] = 1000
+        config["eval_interval"] = 100
         num_cpus = 1
     else:
         seeds = list(range(20))
@@ -56,4 +52,4 @@ if __name__ == "__main__":
 
     ray.init(num_cpus=num_cpus)
 
-    run(seeds, data_sizes, config)
+    run(seeds, data_sizes, config, test=args.test)

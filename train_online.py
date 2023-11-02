@@ -91,7 +91,7 @@ def make_env_and_dataset(env_name: str,
     dataset = D4RLDataset(env, dataset=dataset, clip_to_eps=clip_to_eps)
 
     if 'antmaze' in env_name:
-        dataset.rewards -= 1.0
+        #dataset.rewards -= 1.0
         pass  # normalized in the batch instead
         # See https://github.com/aviralkumar2907/CQL/blob/master/d4rl/examples/cql_antmaze_new.py#L22
         # but I found no difference between (x - 0.5) * 4 and x - 1.0
@@ -151,9 +151,8 @@ def make_save_dir(load_model, env_name, algo, test=False):
     return save_dir
 
 
-def setup_learner(env, pretrained_agent, kwargs):
-    learning_agent = Learner(env.observation_space.sample()[np.newaxis],
-                             env.action_space.sample()[np.newaxis], **kwargs)
+def setup_learner(obs_dim, action_dim, pretrained_agent, kwargs):
+    learning_agent = Learner(obs_dim, action_dim, **kwargs)
     if kwargs["warm_start"]:
         learning_agent.actor = learning_agent.actor.replace(params=pretrained_agent.actor.params)
         learning_agent.critic = learning_agent.critic.replace(params=pretrained_agent.critic.params)
@@ -171,7 +170,7 @@ def save_model(agent, save_dir, type=""):
 
 
 def main(args=None):
-    ext_configs = get_config("online")
+    ext_configs = get_config("flappy")
     if isinstance(args, dict):
         ext_configs.update(args)
     args, unknown = PARSER.parse_known_args()
@@ -196,23 +195,29 @@ def main(args=None):
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    #eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    eval_env = env
-    try:
-        action_dim = env.action_space.shape[0]
-    except IndexError:
-        action_dim = 1
+    eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
+    #eval_env = env
+
+    kwargs = vars(args)
+
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        kwargs['distribution'] = 'discrete'
+        kwargs['policy_dim'] = env.action_space.n
+        sample_action = env.action_space.sample()[np.newaxis]
+    else:
+        kwargs['distribution'] = 'tanh'
+        sample_action = env.action_space.sample()[np.newaxis]
+
 
     if args.algo == "ft":
-        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim,
+        replay_buffer_online = ReplayBuffer(env.observation_space, env.action_space,
                                             max(args.max_steps, args.init_dataset_size))
         replay_buffer_online.initialize_with_dataset(dataset, args.init_dataset_size)
     else:
-        replay_buffer_online = ReplayBuffer(env.observation_space, action_dim, 100000)
-        replay_buffer_offline = ReplayBuffer(env.observation_space, action_dim, args.init_dataset_size)
+        replay_buffer_online = ReplayBuffer(env.observation_space, env.action_space, 100000)
+        replay_buffer_offline = ReplayBuffer(env.observation_space, env.action_space, args.init_dataset_size)
         replay_buffer_offline.initialize_with_dataset(dataset, args.init_dataset_size)
 
-    kwargs = vars(args)
 
     with open(args.save_dir+"/args.txt", "w") as f:
         json.dump(kwargs, f)
@@ -229,30 +234,36 @@ def main(args=None):
     if args.load_model:
         steps = range(1, args.max_steps + 1)
         pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
-                                   env.action_space.sample()[np.newaxis], **kwargs)
+                                   sample_action, **kwargs)
         dirs = glob.glob(args.load_model)
         found = False
         for d in dirs:
-            if "_".join(config_str.split("_", 5)[1:5]) in d:
-                pretrained_agent.actor = pretrained_agent.actor.load(args.load_model + "/pretrained_actor")
-                pretrained_agent.critic = pretrained_agent.critic.load(args.load_model + "/pretrained_critic")
-                pretrained_agent.value = pretrained_agent.value.load(args.load_model + "/pretrained_value")
-                pretrained_agent.target_critic = pretrained_agent.target_critic.load(
-                    args.load_model + "/pretrained_target_critic")
+            if "_".join(config_str.split("_", 5)[1:5]) in d and args.downloaded_dataset[9:-4] in d:
+                print(f"Using saved model: {d}")
+                if "*" in args.load_model:
+                    dir = d
+                else:
+                    dir = args.load_model
+                pretrained_agent.actor = pretrained_agent.actor.load(dir + "/pretrained_actor")
+                pretrained_agent.critic = pretrained_agent.critic.load(dir + "/pretrained_critic")
+                pretrained_agent.value = pretrained_agent.value.load(dir + "/pretrained_value")
+                pretrained_agent.target_critic = pretrained_agent.target_critic.load(dir + "/pretrained_target_critic")
                 found = True
         assert found, f"Pretrained model was not found. Possibly because " \
-                      f"the config string {'_'.join(config_str.split('_', 5)[1:5])} is not in dir name {d}."
+                      f"the config string {'_'.join(config_str.split('_', 5)[1:5])} is not in {args.load_model}."
 
     else:
         steps = range(1 - args.num_pretraining_steps,
                       args.max_steps + 1)
 
         pretrained_agent = Learner(env.observation_space.sample()[np.newaxis],
-                                   env.action_space.sample()[np.newaxis], **kwargs)
+                                   sample_action, **kwargs)
+
 
     # Use negative indices for pretraining steps.
     goal_dists = []
     for i in tqdm.tqdm(steps, smoothing=0.1, disable=not args.tqdm):
+
         if i >= 1:
             if i == 1:
                 if args.algo == "ft":
@@ -260,7 +271,7 @@ def main(args=None):
                 else:
                     n_online_samp = int(0.75 * args.batch_size)
                     n_offline_samp = args.batch_size - n_online_samp
-                    learning_agent = setup_learner(env, pretrained_agent, kwargs)
+                    learning_agent = setup_learner(env.observation_space.sample()[np.newaxis], sample_action, pretrained_agent, kwargs)
                     pretrained_stats = evaluate(pretrained_agent, eval_env, 100)
                     prev_best = pretrained_stats['return']
                     if args.at_thresholds:
@@ -269,7 +280,6 @@ def main(args=None):
                         at_thresholds = [np.inf]*args.curriculum_stages
                     if "gs" in args.algo:
                         horizon = np.max(pretrained_stats['goal_dist'])
-                        #percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
                         horizons = np.linspace(0, horizon, args.curriculum_stages)
                     else:
                         horizon = np.mean(pretrained_stats['all_lens'])
@@ -333,10 +343,17 @@ def main(args=None):
                 batch = replay_buffer_online.sample(args.batch_size)
             else:
                 batch = replay_buffer_offline.sample(args.batch_size)
+            if 'antmaze' in args.env_name:
+                batch = Batch(observations=batch.observations,
+                              actions=batch.actions,
+                              rewards=batch.rewards - 1,
+                              masks=batch.masks,
+                              next_observations=batch.next_observations)
+            #print(batch.actions)
             update_info = pretrained_agent.update(batch)
+        # don't update until there's a batch size of online data in buffer
+        # 0.75*batch size because jsrl takes 75% of batch from online buffer and 25% from offline
         elif args.algo == "ft" or i >= (n_online_samp+1):
-            # don't update until there's a batch size of online data in buffer
-            # 0.75*batch size because jsrl takes 75% of batch from online buffer and 25% from offline
             if args.algo == "ft":
                 batch = replay_buffer_online.sample(args.batch_size)
             else:
@@ -344,20 +361,21 @@ def main(args=None):
                 offline_batch = replay_buffer_offline.sample(n_offline_samp)
                 batch = {}
                 for k in online_batch._asdict().keys():
-                    if k == "rewards" and "antmaze" in args.env_name:
-                        online_v = online_batch._asdict()[k]-1
-                    else:
-                        online_v = online_batch._asdict()[k]
+                    online_v = online_batch._asdict()[k]
                     batch[k] = np.concatenate((online_v, offline_batch._asdict()[k]))
                 batch = Batch(**batch)
+            if 'antmaze' in args.env_name:
+                batch = Batch(observations=batch.observations,
+                              actions=batch.actions,
+                              rewards=batch.rewards - 1,
+                              masks=batch.masks,
+                              next_observations=batch.next_observations)
             update_info = learning_agent.update(batch)
 
         if i % args.log_interval == 0:
             for k, v in update_info.items():
                 if v.ndim == 0:
                     summary_writer.add_scalar(f'training/{k}', np.array(v), i)
-                # else:
-                # summary_writer.add_histogram(f'training/{k}', np.array(v), i)
             summary_writer.flush()
 
         if i % args.eval_interval == 0:
@@ -375,11 +393,7 @@ def main(args=None):
             summary_writer.flush()
 
             eval_returns.append((i, eval_stats['return']))
-            if i<1:
-                at = 0
-            else:
-                at = eval_stats['agent_type']
-            #print(f"{at}: {eval_returns[-1]}")
+
             np.savetxt(os.path.join(args.save_dir, config_str+".txt"),
                        eval_returns,
                        fmt=['%d', '%.1f'])
@@ -389,6 +403,7 @@ def main(args=None):
                            agent_types,
                            fmt=['%d', '%.3f'])
                 summary_writer.add_scalar('training/horizon', horizon_idx, i)
+                #import pdb; pdb.set_trace()
                 if len(horizons) > 0 and horizon_idx != len(horizons) - 1:
                     horizon_idx, prev_best = update_horizon([e[1] for e in eval_returns], horizon_idx, prev_best,
                                                             tolerance=args.tolerance, n=args.n_prev_returns)

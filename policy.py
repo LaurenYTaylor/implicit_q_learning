@@ -63,6 +63,26 @@ class NormalTanhPolicy(nn.Module):
         else:
             return base_dist
 
+class DiscretePolicy(nn.Module):
+    hidden_dims: Sequence[int]
+    action_dim: int
+    dropout_rate: Optional[float] = None
+
+    @nn.compact
+    def __call__(self,
+                 observations: jnp.ndarray,
+                 temperature: float = 1.0,
+                 training: bool = False) -> jnp.ndarray:
+        outputs = MLP(self.hidden_dims,
+                      activate_final=False,
+                      dropout_rate=self.dropout_rate)(observations,
+                                                      training=training)
+
+        actions = nn.Dense(self.action_dim,
+                           kernel_init=default_init())(outputs)
+        actions = nn.softmax(actions)
+        dist = tfp.distributions.Categorical(probs=actions)
+        return dist
 
 @functools.partial(jax.jit, static_argnames=('actor_def'))
 def _sample_actions(rng: PRNGKey,
@@ -70,9 +90,12 @@ def _sample_actions(rng: PRNGKey,
                     actor_params: Params,
                     observations: np.ndarray,
                     temperature: float = 1.0) -> Tuple[PRNGKey, jnp.ndarray]:
+
     dist = actor_def.apply({'params': actor_params}, observations, temperature)
+
     rng, key = jax.random.split(rng)
-    return rng, dist.sample(seed=key)
+    actions = dist.sample(seed=key)
+    return rng, actions
 
 
 def sample_actions(rng: PRNGKey,
@@ -80,7 +103,21 @@ def sample_actions(rng: PRNGKey,
                    actor_params: Params,
                    observations: np.ndarray,
                    temperature: float = 1.0) -> Tuple[PRNGKey, jnp.ndarray]:
+
     actions = _sample_actions(rng, actor_def, actor_params, observations,
                            temperature)
     return actions
 
+def sample_deterministic_actions(rng: PRNGKey,
+                   actor_def: nn.Module,
+                   actor_params: Params,
+                   observations: np.ndarray,
+                   temperature: float = 1.0) -> Tuple[PRNGKey, jnp.ndarray]:
+
+    dist = actor_def.apply({'params': actor_params}, observations, temperature)
+    possible_actions = list(range(actor_def.action_dim))
+
+    lps = dist.log_prob(possible_actions)
+    actions = jnp.argmax(lps)
+    rng, key = jax.random.split(rng)
+    return rng, actions

@@ -1,6 +1,7 @@
 from typing import Tuple
 
 import jax.numpy as jnp
+import jax
 
 from common import Batch, InfoDict, Model, Params
 
@@ -14,6 +15,7 @@ def update_v(critic: Model, value: Model, batch: Batch,
              expectile: float) -> Tuple[Model, InfoDict]:
     actions = batch.actions
     q1, q2 = critic(batch.observations, actions)
+
     q = jnp.minimum(q1, q2)
 
     def value_loss_fn(value_params: Params) -> Tuple[jnp.ndarray, InfoDict]:

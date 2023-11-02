@@ -4,5 +4,9 @@ def get_config(train_type=None):
 
     if train_type == "online":
         config["opt_decay_schedule"] = None  # Don't decay optimizer lr
+    elif train_type == "flappy":
+        config["opt_decay_schedule"] = None
+        config["actor_lr"] = 0.000001
+        config["expectile"] = 0.9
 
     return config
