@@ -6,6 +6,7 @@ plotting/plots
 datasets
 datasets.zip
 slurm*
+.idea/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
