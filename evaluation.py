@@ -11,7 +11,6 @@ def evaluate(agent: nn.Module, env: gym.Env,
 
     all_dists = []
     all_lens = []
-    import time
     for _ in range(num_episodes):
         observation, done = env.reset(), False
         i = 0

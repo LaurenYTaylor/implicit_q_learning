@@ -2,6 +2,7 @@ import numpy as np
 import glob
 from dataset_utils import ReplayBuffer
 from learner import Learner
+from env_goals import ENV_GOALS
 class Agent:
     def __init__(self, kwargs, obs_space, action_space):
         self.kwargs = kwargs
@@ -68,12 +69,11 @@ class Agent:
         agent.target_critic.save(f"{self.kwargs['save_dir']}/{atype}target_critic")
         agent.value.save(f"{self.kwargs['save_dir']}/{atype}value")
 
-    def evaluate(env, num_episodes):
+    def evaluate(env, agent, num_episodes):
         stats = {'return': [], 'length': []}
 
         all_dists = []
         all_lens = []
-        import time
         for _ in range(num_episodes):
             observation, done = env.reset(), False
             i = 0
@@ -99,6 +99,40 @@ class Agent:
 
         stats['goal_dist'] = all_dists
         stats['all_lens'] = all_lens
+        return stats
+
+
+    def evaluate(self, env, agents, num_episodes, horizon_fn=None, use_offline_fn=None):
+        stats = {'return': [], 'length': []}
+        all_horizons = []
+        agent_types = []
+        for _ in range(num_episodes):
+            observation, done = env.reset(), False
+            time_step = 0
+            agent_type = []
+            while not done:
+                if horizon_fn is not None:
+                    h = horizon_fn(env, observation, time_step)
+                    all_horizons.append(h)
+                agent = agents["online"]
+                step_agent_type = 1.0
+                if use_offline_fn is not None and use_offline_fn(h, np.mean(agent_type)):
+                    agent = agents["offline"]
+                    step_agent_type = 0.0
+                action = agent.sample_deterministic_actions(observation)
+                observation, _, done, info = env.step(action)
+                time_step += 1
+                agent_type.append(step_agent_type)
+
+            for k in stats.keys():
+                stats[k].append(info['episode'][k])
+            agent_types.append(np.mean(agent_type))
+
+        for k, v in stats.items():
+            stats[k] = np.mean(v)
+
+        stats['all_horizons'] = all_horizons
+        stats['agent_type'] = np.mean(agent_types
         return stats
 
 
@@ -128,6 +162,8 @@ class JSRLAgent(Agent):
         self.horizon_idx = 0
         self.eval_returns = []
         self.agent_type = []
+        self.n_online_samp = int(0.75 * self.kwargs['batch_size'])
+        self.n_offline_samp = self.kwargs['batch_size'] - self.n_online_samp
     def make_replay_buffers(self, obs_space, action_dim, dataset):
         self.replay_buffer_online = ReplayBuffer(obs_space, action_dim, 100000)
         replay_buffer_offline = ReplayBuffer(obs_space, action_dim, self.kwargs["init_dataset_size"])
@@ -135,32 +171,68 @@ class JSRLAgent(Agent):
 
     def go_online(self):
         super().go_online()
-        self.n_online_samp = int(0.75 * self.kwargs['batch_size'])
-        self.n_offline_samp = self.kwargs['batch_size'] - self.n_online_samp
         self.online_agent = self.setup_learner()
 
-        pretrained_stats = evaluate(pretrained_agent, eval_env, 100)
+        pretrained_stats = self.evaluate(eval_env,
+                                         {"online": self.offline_agent,
+                                          "offline": None},
+                                         100)
         prev_best = pretrained_stats['return']
         if self.kwargs["at_thresholds"]:
             at_thresholds = np.linspace(0, 1, self.kwargs["curriculum_stages"])
         else:
             at_thresholds = [np.inf] * self.kwargs["curriculum_stages"]
-        if "gs" in args.algo:
-            horizon = np.max(pretrained_stats['goal_dist'])
-            # percentiles = np.percentile(pretrained_stats['goal_dist'], np.linspace(0,100,args.curriculum_stages))[:]
-            horizons = np.linspace(0, horizon, self.kwargs['curriculum_stages'])
-        else:
-            horizon = np.mean(pretrained_stats['all_lens'])
-            horizons = np.linspace(horizon, 0, self.kwargs['curriculum_stages'])
+        horizon = np.mean(pretrained_stats['all_lens'])
 
-
+        self.horizon_idx = 0
+        self.horizons = np.linspace(horizon, 0, self.kwargs['curriculum_stages'])
+        self.athresh = self.at_thresholds[self.horizon_idx]
+    def evaluate(self, eval_env):
+        super().evaluate(eval_env,
+                         {"online": self.online_agent,
+                            "offline": self.offline_agent},
+                         self.use_offline_env,
+                         self.horizon_fn)
+    def use_offline_fn(self, h, at):
+        return (h <= self.horizons[self.horizon_idx] or at > self.athresh)
+    def horizon_fn(self, _env, _obs, time_step):
+        return time_step
 
 class JSRLGSAgent(Agent):
     def __init__(self):
+        super().__init__()
         self.horizon_idx = 0
         self.eval_returns = []
         self.agent_type = []
+        self.n_online_samp = int(0.75 * self.kwargs['batch_size'])
+        self.n_offline_samp = self.kwargs['batch_size'] - self.n_online_samp
     def make_replay_buffers(self, obs_space, action_dim, dataset):
         self.replay_buffer_online = ReplayBuffer(obs_space, action_dim, 100000)
         self.replay_buffer_offline = ReplayBuffer(obs_space, action_dim, self.kwargs["init_dataset_size"])
         self.replay_buffer_offline.initialize_with_dataset(dataset, self.kwargs["init_dataset_size"])
+
+    def go_online(self):
+        super().go_online()
+        self.online_agent = self.setup_learner()
+
+        pretrained_stats = self.evaluate(self.offline_agent, eval_env, 100)
+        prev_best = pretrained_stats['return']
+        if self.kwargs["at_thresholds"]:
+            at_thresholds = np.linspace(0, 1, self.kwargs["curriculum_stages"])
+        else:
+            at_thresholds = [np.inf] * self.kwargs["curriculum_stages"]
+        horizon = np.max(pretrained_stats['goal_dist'])
+        self.horizons = np.linspace(0, horizon, self.kwargs['curriculum_stages'])
+        self.horizon_idx = 0
+        self.athresh = self.at_thresholds[self.horizon_idx]
+
+    def evaluate(self, eval_env):
+        super().evaluate(eval_env,
+                         {"online": self.online_agent,
+                            "offline": self.offline_agent},
+                         self.use_offline_env,
+                         self.horizon_fn)
+    def use_offline_fn(self, h, at):
+        return (h <= self.horizons[self.horizon_idx] or at > self.athresh)
+    def horizon_fn(self, env, obs, _time_step):
+        return ENV_GOALS[self.kwargs["env_name"](env, obs)]

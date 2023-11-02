@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="50ce98c3-63f5-4f2c-8111-290321bd60af" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/env_goals.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/parallel_training.py" beforeDir="false" afterPath="$PROJECT_DIR$/parallel_training.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/percentile_experiments.py" beforeDir="false" afterPath="$PROJECT_DIR$/percentile_experiments.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" beforeDir="false" afterPath="$PROJECT_DIR$/plotting/compare_ft_jsrl_jsrlgs.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/train_online.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_online.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,7 +32,7 @@
   "keyToString": {
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "//wsl$/Ubuntu/home/a1899783/anaconda3/envs/iql-env/lib/python3.9/site-packages/d4rl",
+    "last_opened_file_path": "U:/Code/implicit_q_learning",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -77,6 +76,7 @@
       <workItem from="1692920671781" duration="63116000" />
       <workItem from="1693963512610" duration="33232000" />
       <workItem from="1694564761035" duration="5225000" />
+      <workItem from="1698885489240" duration="5055000" />
     </task>
     <servers />
   </component>

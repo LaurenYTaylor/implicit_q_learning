@@ -151,12 +151,6 @@ def make_save_dir(load_model, env_name, algo, test=False):
     return save_dir
 
 
-
-
-
-
-
-
 def main(args=None):
     ext_configs = get_config("online")
     if isinstance(args, dict):
