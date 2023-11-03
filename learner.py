@@ -61,6 +61,8 @@ class Learner(object):
                  dropout_rate: Optional[float] = None,
                  max_steps: Optional[int] = None,
                  opt_decay_schedule: str = "cosine",
+                 distribution: str = "continuous",
+                 policy_dim: int = None,
                  **kwargs):
         """
         An implementation of the version of Soft-Actor-Critic described in https://arxiv.org/abs/1801.01290
@@ -80,13 +82,18 @@ class Learner(object):
         else:
             self.activation = lambda x: x
 
-        actor_def = policy.NormalTanhPolicy(hidden_dims,
+        if distribution == "continuous":
+            actor_def = policy.NormalTanhPolicy(hidden_dims,
                                             action_dim,
                                             log_std_scale=1e-3,
                                             log_std_min=-5.0,
                                             dropout_rate=dropout_rate,
                                             state_dependent_std=False,
                                             tanh_squash_distribution=False)
+        elif distribution == 'discrete':
+            actor_def = policy.DiscretePolicy(hidden_dims,
+                                              policy_dim,
+                                              dropout_rate=dropout_rate)
 
         if opt_decay_schedule == "cosine":
             schedule_fn = optax.cosine_decay_schedule(-actor_lr, max_steps)
@@ -99,7 +106,10 @@ class Learner(object):
                              inputs=[actor_key, observations],
                              tx=optimiser)
 
-        critic_def = value_net.DoubleCritic(hidden_dims)
+        if distribution == "discrete":
+            critic_def = value_net.DiscDoubleCritic(hidden_dims, policy_dim)
+        else:
+            critic_def = value_net.DoubleCritic(hidden_dims)
         critic = Model.create(critic_def,
                               inputs=[critic_key, observations, actions],
                               tx=optax.adam(learning_rate=critic_lr))
@@ -125,10 +135,33 @@ class Learner(object):
                                              self.actor.params, observations,
                                              temperature)
         self.rng = rng
-        actions = jnp.nan_to_num(actions)
-        actions = np.asarray(actions)
+        if not isinstance(policy, policy.DiscretePolicy):
+            actions = jnp.nan_to_num(actions)
+            actions = np.asarray(actions)
+            actions = np.clip(self.activation(actions), -1, 1)
 
-        return np.clip(self.activation(actions), -1, 1)
+        return actions
+
+    def sample_deterministic_actions(self,
+                       observations: np.ndarray) -> jnp.ndarray:
+
+        if isinstance(policy, policy.DiscretePolicy):
+            dist = self.actor.apply_fn.apply({'params': self.actor.params}, observations)
+            possible_actions = list(range(self.actor.apply_fn.action_dim))
+            lps = dist.log_prob(possible_actions)
+            actions = jnp.argmax(lps)
+            rng, key = jax.random.split(self.rng)
+            return rng, actions
+        else:
+            rng, actions = policy.sample_actions(self.rng, self.actor.apply_fn,
+                                                 self.actor.params, observations,
+                                                 temperature=0)
+            actions = jnp.nan_to_num(actions)
+            actions = np.asarray(actions)
+            actions = np.clip(self.activation(actions), -1, 1)
+
+        self.rng = rng
+        return actions
 
     def update(self, batch: Batch) -> InfoDict:
         new_rng, new_actor, new_critic, new_value, new_target_critic, info = _update_jit(

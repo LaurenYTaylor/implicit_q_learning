@@ -1,5 +1,5 @@
 import collections
-from typing import Optional
+from typing import Optional, Union
 import pickle
 
 import gym
@@ -114,15 +114,16 @@ class D4RLDataset(Dataset):
 
 
 class ReplayBuffer(Dataset):
-    def __init__(self, observation_space: gym.spaces.Box, action_dim: int,
+    def __init__(self, observation_space: gym.spaces.Box,
+                 action_space: Union[gym.spaces.Box,gym.spaces.Discrete],
                  capacity: int):
 
         observations = np.empty((capacity, *observation_space.shape),
                                 dtype=observation_space.dtype)
-        if action_dim == 1:
-            actions = np.empty((capacity, action_dim), dtype=np.int64)
-        else:
-            actions = np.empty((capacity, action_dim), dtype=np.float32)
+
+        action = action_space.sample()
+        actions = np.empty((capacity, action[np.newaxis].shape[-1]), dtype=action.dtype)
+
         rewards = np.empty((capacity, ), dtype=np.float32)
         masks = np.empty((capacity, ), dtype=np.float32)
         dones_float = np.empty((capacity, ), dtype=np.float32)

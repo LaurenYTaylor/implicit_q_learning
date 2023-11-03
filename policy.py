@@ -74,7 +74,26 @@ def _sample_actions(rng: PRNGKey,
     rng, key = jax.random.split(rng)
     return rng, dist.sample(seed=key)
 
+class DiscretePolicy(nn.Module):
+    hidden_dims: Sequence[int]
+    action_dim: int
+    dropout_rate: Optional[float] = None
 
+    @nn.compact
+    def __call__(self,
+                 observations: jnp.ndarray,
+                 temperature: float = 1.0,
+                 training: bool = False) -> jnp.ndarray:
+        outputs = MLP(self.hidden_dims,
+                      activate_final=False,
+                      dropout_rate=self.dropout_rate)(observations,
+                                                      training=training)
+
+        actions = nn.Dense(self.action_dim,
+                           kernel_init=default_init())(outputs)
+        actions = nn.softmax(actions)
+        dist = tfp.distributions.Categorical(probs=actions)
+        return dist
 def sample_actions(rng: PRNGKey,
                    actor_def: nn.Module,
                    actor_params: Params,

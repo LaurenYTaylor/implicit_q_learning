@@ -20,7 +20,11 @@ def update(key: PRNGKey, actor: Model, critic: Model, value: Model,
                            batch.observations,
                            training=True,
                            rngs={'dropout': key})
-        log_probs = dist.log_prob(batch.actions.astype(jnp.float32))
+
+        if batch.actions.dtype == jnp.float32:
+            log_probs = dist.log_prob(batch.actions.astype(jnp.float32))
+        else:
+            log_probs = dist.log_prob(batch.actions[:, 0])
         actor_loss = -(exp_a * log_probs).mean()
 
         return actor_loss, {'actor_loss': actor_loss, 'adv': q - v}
