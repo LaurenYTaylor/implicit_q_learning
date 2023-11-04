@@ -37,7 +37,7 @@ if __name__ == "__main__":
         config = {"env_name": "antmaze-umaze-v0",
 	          "num_pretraining_steps": 1000,
 	          "max_steps": 1000,
-                  "eval_interval": 700,
+                  "eval_interval": 250,
 	          "algo": algo}
        	seeds = [0]
         data_sizes = [1000]

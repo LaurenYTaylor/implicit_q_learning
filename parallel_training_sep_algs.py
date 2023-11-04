@@ -3,22 +3,18 @@ from train_online import main, make_save_dir
 from memory_profiler import profile
 
 @ray.remote
-def run_training(seed, n_data, save_dir, config):
+def run_training(seed, n_data, save_dir, config, dataset_name):
     config["seed"] = seed
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
-    config["downloaded_dataset"] = f"datasets/antmaze_umaze_{n_data}.pkl"
+    config["downloaded_dataset"] = f"datasets/{dataset_name}_{n_data}.pkl"
     return main(config)
 
 
-def run(seeds, data_sizes, config):
-    if config["max_steps"] <= 100:
-        test = True
-    else:
-        test = False
-    save_dir = make_save_dir(False, "antmaze-umaze-v0", config["algo"], test=test)
+def run(seeds, data_sizes, config, dataset_name, test=False):
+    save_dir = make_save_dir(False, config["env_name"], config["algo"], test=test)
     object_references = [
-        run_training.remote(seed, data_size, save_dir, config)
+        run_training.remote(seed, data_size, save_dir, config, dataset_name)
         for data_size in data_sizes for seed in seeds
     ]
 
@@ -35,19 +31,25 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--test", action="store_true")
+    parser.add_argument("--algo", default="ft")
+    parser.add_argument("--at_thresh", action="store_true")
+    parser.add_argument("--env", default="antmaze-umaze-v0")
+    parser.add_argument("--dataset_name", default="antmaze_umaze")
     args = parser.parse_args()
 
-    config = {"env_name": "antmaze-umaze-v0",
+    config = {"env_name": args.env_name,
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000,
-              "algo": "jsrlgs"}
+              "algo": args.algo,
+              "at_thresh": args.at_thresholds,
+              "eval_episodes": 100}
 
     if args.test:
         seeds = [0]
         data_sizes = [1000]
         config["num_pretraining_steps"] = 100
         config["max_steps"] = 100
-        config["eval_interval"] = 700
+        config["eval_interval"] = 50
         num_cpus = 1
     else:
         seeds = list(range(20))
@@ -56,4 +58,4 @@ if __name__ == "__main__":
 
     ray.init(num_cpus=num_cpus)
 
-    run(seeds, data_sizes, config)
+    run(seeds, data_sizes, config, args.dataset_name, args.test)

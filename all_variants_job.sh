@@ -11,5 +11,5 @@
 
 module load Anaconda3/2023.03 
 conda activate jsrlgs-env
-python parallel_training_sep_algs.py
+python parallel_training_sep_algs.py --algo ft --test
 conda deactivate
