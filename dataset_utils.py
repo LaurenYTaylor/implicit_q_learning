@@ -161,7 +161,6 @@ class ReplayBuffer(Dataset):
             indices = np.arange(num_samples)
 
         self.observations[:num_samples] = dataset.observations[indices]
-
         self.actions[:num_samples] = dataset.actions[indices]
         self.rewards[:num_samples] = dataset.rewards[indices]
         self.masks[:num_samples] = dataset.masks[indices]

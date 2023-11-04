@@ -162,8 +162,8 @@ def main(args=None):
     summary_writer = SummaryWriter(os.path.join(args.save_dir, 'tb', config_str), flush_secs=180)
 
     env, dataset = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    #eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
-    eval_env = env
+    eval_env, _ = make_env_and_dataset(args.env_name, args.seed, downloaded_dataset=args.downloaded_dataset)
+    #eval_env = env
 
     kwargs = vars(args)
 
@@ -194,20 +194,25 @@ def main(args=None):
     for i in tqdm.tqdm(num_steps, smoothing=0.1, disable=not args.tqdm):
         if i >= 1:
             if i == 1:
-                offline_stats = agent.evaluate(env, horizon_fn=True)
-                #prev_best = offline_stats['return']
-                prev_best = -np.inf
+                offline_stats = agent.evaluate(env, horizon_fn=hasattr(agent, "horizon_fn"))
+                prev_best = offline_stats['return']
+                #prev_best = -np.inf
 
                 agent.go_online(agent.max_horizon(offline_stats))
                 online_eval_returns = []
+                eval_agent_types = []
 
             use_offline_agent = False
 
             if hasattr(agent, "horizon_fn"):
                 h = agent.horizon_fn(env, observation, time_step)
 
+            at = 0
+            if len(agent_type) > 0:
+                at = np.mean(agent_type)
+
             if hasattr(agent, "use_offline_fn"):
-                use_offline_agent = agent.use_offline_fn(h, np.mean(agent_type))
+                use_offline_agent = agent.use_offline_fn(h, at)
 
             if use_offline_agent:
                 action = agent.offline_agent.sample_actions(observation, )
@@ -215,11 +220,11 @@ def main(args=None):
             else:
                 action = agent.online_agent.sample_actions(observation, )
                 agent_type.append(1.0)
-            try:
-                print(f"current: {h}, horizons: {agent.horizons}, thresh: {agent.horizons[agent.horizon_idx]},"\
-                  f"agent: {np.mean(agent_type)}, ts: {time_step}, at: {agent.athresh}")
-            except UnboundLocalError:
-                print("IQL")
+            #try:
+                #print(f"current: {h}, horizons: {agent.horizons}, thresh: {agent.horizons[agent.horizon_idx]},"\
+                  #f"agent: {np.mean(agent_type)}, ts: {time_step}, at: {agent.athresh}")
+            #except UnboundLocalError:
+                #print("IQL")
 
             if isinstance(env.action_space, gym.spaces.Box):
                 action = np.clip(action, -1, 1)
@@ -268,7 +273,7 @@ def main(args=None):
 
         if i % args.eval_interval == 0:
             eval_stats = agent.evaluate(eval_env, num_episodes=args.eval_episodes)
-            print(f"Eval agent type: {eval_stats['agent_type']}")
+
             for k, v in eval_stats.items():
                 if isinstance(v, list):
                     v = np.mean(v)
@@ -276,16 +281,19 @@ def main(args=None):
             summary_writer.flush()
 
             eval_returns.append((i, eval_stats['return']))
-            if i > 1:
-                online_eval_returns.append((i, eval_stats['return']))
-
-            np.savetxt(os.path.join(args.save_dir, config_str+".txt"),
+            np.savetxt(os.path.join(args.save_dir, config_str + ".txt"),
                        eval_returns,
                        fmt=['%d', '%.1f'])
 
-            if i > 0:
-                agent.update_horizon(online_eval_returns, prev_best)
+            if i > 1:
+                online_eval_returns.append((i, eval_stats['return']))
+                eval_agent_types.append((i, eval_stats['agent_type']))
+                #print(f"Eval agent type: {eval_stats['agent_type']}, len returns: {len(online_eval_returns)},"
+                      #f"horizon_idx: {agent.horizon_idx}, return: {eval_stats['return']}")
+                agent.update_horizon(np.array(online_eval_returns)[:, 1], prev_best)
                 summary_writer.add_scalar('training/horizon', agent.horizon_idx, i)
+                np.savetxt(os.path.join(args.save_dir, config_str + "agent_types.txt"),
+                           eval_agent_types, fmt=['%d', '%.1f'])
 
     agent.save_model()
 

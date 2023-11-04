@@ -8,4 +8,4 @@ def antumaze_goal(env, _obs):
 
 
 ENV_GOALS = {"FlappyBird-v0": flappy_height_goal,
-             "antmaze_umaze_v0": antumaze_goal}
+             "antmaze-umaze-v0": antumaze_goal}

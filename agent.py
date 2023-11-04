@@ -89,7 +89,11 @@ class Agent:
                 if self.mode == "offline":
                     agent = self.offline_agent
                 elif self.mode == "online":
-                    if use_offline_fn and self.use_offline_fn(h, np.mean(agent_type)):
+                    at = 0
+                    if len(agent_type) > 0:
+                        at = np.mean(agent_type)
+
+                    if use_offline_fn and self.use_offline_fn(h, at):
                         agent = self.offline_agent
                     else:
                         step_agent_type = 1.0
@@ -213,7 +217,7 @@ class JSRLAgent(Agent):
         eval_stats = super().evaluate(eval_env, num_episodes, use_offline_fn, horizon_fn)
         return eval_stats
     def use_offline_fn(self, h, at):
-        return (h <= self.horizons[self.horizon_idx] or at > self.athresh)
+        return (h <= self.horizons[self.horizon_idx] or at >= self.athresh)
     def horizon_fn(self, _env, _obs, time_step):
         return time_step
     def max_horizon(self, stats):
@@ -258,9 +262,11 @@ class JSRLGSAgent(Agent):
         eval_stats = super().evaluate(eval_env, num_episodes, use_offline_fn, horizon_fn)
         return eval_stats
     def use_offline_fn(self, h, at):
-        return (h <= self.horizons[self.horizon_idx] or at > self.athresh)
+        return ((h >= self.horizons[self.horizon_idx] and
+                 h <= self.horizons[-1]) or
+                at >= self.athresh)
     def horizon_fn(self, env, obs, _time_step):
-        return ENV_GOALS[self.params["env_name"](env, obs)]
+        return ENV_GOALS[self.params["env_name"]](env, obs)
     def max_horizon(self, stats):
         horizon = np.max(stats['horizon'])
         return horizon
