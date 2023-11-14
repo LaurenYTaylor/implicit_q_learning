@@ -33,16 +33,20 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--algo", default="ft")
     parser.add_argument("--at_thresh", action="store_true")
-    parser.add_argument("--env", default="antmaze-umaze-v0")
+    parser.add_argument("--env_name", default="antmaze-umaze-v0")
     parser.add_argument("--dataset_name", default="antmaze_umaze")
+    parser.add_argument("--warm_start", action="store_true")
     args = parser.parse_args()
 
     config = {"env_name": args.env_name,
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000,
               "algo": args.algo,
-              "at_thresh": args.at_thresholds,
-              "eval_episodes": 100}
+              "at_thresholds": args.at_thresh,
+              "eval_episodes": 100,
+              "tolerance": 0,
+              "n_prev_returns": 5,
+              "warm_start": args.warm_start}
 
     if args.test:
         seeds = [0]
@@ -53,7 +57,10 @@ if __name__ == "__main__":
         num_cpus = 1
     else:
         seeds = list(range(20))
-        data_sizes = [1000, 10000, 100000, 1000000]
+        if "Flappy" in args.env_name:
+            data_sizes = [1000000]
+        else:
+            data_sizes = [1000, 10000, 100000, 1000000]
         num_cpus = min(80, len(data_sizes)*len(seeds))
 
     ray.init(num_cpus=num_cpus)

@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--algo", default="ft")
     parser.add_argument("--at_thresh", action="store_true")
-    parser.add_argument("--env", default="antmaze-umaze-v0")
+    parser.add_argument("--env_name", default="antmaze-umaze-v0")
     parser.add_argument("--dataset_name", default="antmaze_umaze")
     args = parser.parse_args()
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
               "num_pretraining_steps": 1000000,
               "max_steps": 1000000,
               "algo": args.algo,
-              "at_thresh": args.at_thresholds,
+              "at_thresholds": args.at_thresh,
               "eval_episodes": 100}
 
     algos = ["ft", "jsrl", "jsrlgs"]
