@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -p a100cpu
+#SBATCH -p skylake
 #SBATCH -N 1
 #SBATCH -n 20
 #SBATCH --time=35:00:00
@@ -11,5 +11,5 @@
 
 module load Anaconda3/2023.03 
 conda activate jsrlgs-env
-python parallel_training_sep_algs.py --algo ft --test
+python parallel_training_sep_algs.py --algo jsrlgs --warm_start --at_thresh --env FlappyBird-v0 --dataset_name flappy_ppo
 conda deactivate
