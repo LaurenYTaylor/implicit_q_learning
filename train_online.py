@@ -90,12 +90,7 @@ def make_env_and_dataset(env_name: str,
             dataset = pickle.load(f)
     dataset = D4RLDataset(env, dataset=dataset, clip_to_eps=clip_to_eps)
 
-    if 'antmaze' in env_name:
-        dataset.rewards -= 1.0
-        pass  # normalized in the batch instead
-        # See https://github.com/aviralkumar2907/CQL/blob/master/d4rl/examples/cql_antmaze_new.py#L22
-        # but I found no difference between (x - 0.5) * 4 and x - 1.0
-    elif ('halfcheetah' in env_name or 'walker2d' in env_name
+    if ('halfcheetah' in env_name or 'walker2d' in env_name
           or 'hopper' in env_name):
         normalize(dataset)
 
