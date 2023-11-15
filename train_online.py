@@ -12,6 +12,7 @@ import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import glob
 import re
+import json
 
 
 import wrappers
@@ -177,6 +178,9 @@ def main(args=None):
 
 
     agent.make_replay_buffers(dataset)
+
+    with open(args.save_dir + "/args.txt", "w") as f:
+        json.dump(kwargs, f)
 
     eval_returns = []
     agent_type = []
