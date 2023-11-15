@@ -34,8 +34,8 @@ if __name__ == "__main__":
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--algo", default="ft")
     parser.add_argument("--at_thresh", action="store_true")
-    parser.add_argument("--env_name", default="antmaze-umaze-v0")
-    parser.add_argument("--dataset_name", default="antmaze_umaze")
+    parser.add_argument("--env_name", default="antmaze-umaze-v2")
+    parser.add_argument("--dataset_name", default="antmaze_umaze-v2")
     parser.add_argument("--warm_start", action="store_true")
     args = parser.parse_args()
 
