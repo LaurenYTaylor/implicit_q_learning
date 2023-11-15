@@ -9,7 +9,7 @@ def run_training(seed, n_data, algo, save_dir, config, dataset_name):
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
     config["algo"] = algo
-    config["downloaded_dataset"] = f"datasets/{dataset_name}_{n_data}.pkl"
+    config["downloaded_dataset"] = f"datasets/{dataset_name}.pkl"
     return main(config)
 
 

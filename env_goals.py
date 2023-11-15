@@ -11,4 +11,7 @@ ENV_GOALS = {"FlappyBird-v0": flappy_height_goal,
              "antmaze-umaze-v0": antumaze_goal,
              "antmaze-umaze-diverse-v0": antumaze_goal,
              "antmaze-umaze-v2": antumaze_goal,
-             "antmaze-umaze-diverse-v2": antumaze_goal}
+             "antmaze-medium-play-v2": antumaze_goal,
+             "antmaze-medium-diverse-v2": antumaze_goal,
+             "antmaze-large-play-v2": antumaze_goal,
+             "antmaze-large-diverse-v2": antumaze_goal}

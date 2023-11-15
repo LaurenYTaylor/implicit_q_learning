@@ -52,9 +52,9 @@ if __name__ == "__main__":
     if args.test:
         seeds = [0]
         data_sizes = [1000000]
-        config["num_pretraining_steps"] = 100
+        config["num_pretraining_steps"] = 50000
         config["max_steps"] = 10000
-        config["eval_interval"] = 100
+        config["eval_interval"] = 10000
         num_cpus = 1
     else:
         seeds = list(range(20))
