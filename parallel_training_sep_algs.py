@@ -7,7 +7,8 @@ def run_training(seed, n_data, save_dir, config, dataset_name):
     config["seed"] = seed
     config["init_dataset_size"] = n_data
     config["save_dir"] = save_dir
-    config["downloaded_dataset"] = f"datasets/{dataset_name}_{n_data}.pkl"
+    config["downloaded_dataset"] = f"datasets/{dataset_name}.pkl"
+    print(config)
     return main(config)
 
 
@@ -50,10 +51,10 @@ if __name__ == "__main__":
 
     if args.test:
         seeds = [0]
-        data_sizes = [1000]
+        data_sizes = [1000000]
         config["num_pretraining_steps"] = 100
-        config["max_steps"] = 100
-        config["eval_interval"] = 50
+        config["max_steps"] = 10000
+        config["eval_interval"] = 100
         num_cpus = 1
     else:
         seeds = list(range(20))
