@@ -24,10 +24,10 @@ def convert_file(fn):
         pickle.dump(df_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
-    for fn in glob.glob("datasets/*hdf5"):
-    #fn = "datasets/antmaze-umaze-v2.hdf5"
-        convert_file(fn)
-        for file in glob.glob(fn[:-5]+".pkl"):
-            with open(file, "rb") as f:
-                data = pd.read_pickle(file)
-                print(data)
+    #for fn in glob.glob("datasets/*hdf5"):
+    fn = "datasets/antmaze-umaze-v2.hdf5"
+    convert_file(fn)
+    for file in glob.glob(fn[:-5]+".pkl"):
+        with open(file, "rb") as f:
+            data = pd.read_pickle(file)
+            print(data)

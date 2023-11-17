@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--algo", default="ft")
     parser.add_argument("--at_thresh", action="store_true")
     parser.add_argument("--env_name", default="antmaze-umaze-v2")
-    parser.add_argument("--dataset_name", default="antmaze_umaze-v2")
+    parser.add_argument("--dataset_name", default="antmaze-umaze-v2")
     args = parser.parse_args()
 
     config = {"env_name": args.env_name,
@@ -50,6 +50,7 @@ if __name__ == "__main__":
               "eval_episodes": 100}
 
     algos = ["ft", "jsrl", "jsrlgs"]
+
 
     if args.test:
         seeds = [0]
